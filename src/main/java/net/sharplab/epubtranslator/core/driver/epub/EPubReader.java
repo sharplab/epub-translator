@@ -21,24 +21,6 @@ public class EPubReader {
         this.ePubContentFileProviders = Collections.unmodifiableList(ePubContentFileProviders);
     }
 
-    static byte[] readFile(File file) {
-        final int bufferSize = 1024;
-        final byte[] buffer = new byte[bufferSize];
-        try (FileInputStream fileInputStream = new FileInputStream(file)) {
-            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            while (true) {
-                int readSize = fileInputStream.read(buffer, 0, buffer.length);
-                if (readSize < 0) {
-                    break;
-                }
-                byteArrayOutputStream.write(buffer, 0, readSize);
-            }
-            return byteArrayOutputStream.toByteArray();
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
     public EPubFile read(File srcFile) {
         List<EPubContentFile> contentFiles = new LinkedList<>();
         try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(srcFile))) {

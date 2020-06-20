@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 public class DeepLTranslator implements Translator {
 
-    private final static List<String> IGNORE_ELEMENT_NAMES = List.of("abbr", "b", "cite", "code", "data", "dfn", "kbd", "rp", "rt", "rtc", "ruby", "samp", "time", "var");
+    private static final List<String> IGNORE_ELEMENT_NAMES = List.of("abbr", "b", "cite", "code", "data", "dfn", "kbd", "rp", "rt", "rtc", "ruby", "samp", "time", "var");
 
     private final String apiKey;
 

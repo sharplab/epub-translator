@@ -11,9 +11,9 @@ public class EPubTranslatorSetting {
     @ConfigProperty(name = "ePubTranslator.deepL.apiKey")
     String deepLApiKey;
 
-    @ConfigProperty(name = "ePubTranslator.language.source")
+    @ConfigProperty(name = "ePubTranslator.language.source", defaultValue = "en")
     String defaultSrcLang;
-    @ConfigProperty(name = "ePubTranslator.language.destination")
+    @ConfigProperty(name = "ePubTranslator.language.destination", defaultValue = "ja")
     String defaultDstLang;
 
     public String getDeepLApiKey() {

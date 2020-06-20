@@ -1,5 +1,6 @@
 package net.sharplab.epubtranslator.app.config;
 
+import io.quarkus.runtime.configuration.ConfigurationException;
 import net.sharplab.epubtranslator.app.EPubTranslatorSetting;
 import net.sharplab.epubtranslator.core.driver.epub.EPubReader;
 import net.sharplab.epubtranslator.core.driver.epub.EPubWriter;
@@ -25,7 +26,8 @@ public class AppConfig {
 
     @Produces
     Translator translator() {
-        return new DeepLTranslator(ePubTranslatorSetting.getDeepLApiKey());
+        String apiKey = ePubTranslatorSetting.getDeepLApiKey();
+        return new DeepLTranslator(apiKey);
     }
 
     @Produces

@@ -13,10 +13,7 @@ import org.w3c.dom.ls.LSSerializer;
 
 import javax.enterprise.context.Dependent;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -24,17 +21,19 @@ import java.util.stream.Collectors;
 public class EPubTranslatorServiceImpl implements EPubTranslatorService {
 
     /**
+     * 一つの翻訳リクエストチャンクに含めることが可能な最大文字数
+     */
+    private static final int MAX_REQUESTABLE_TEXT_LENGTH = 5000;
+    /**
      * インライン要素のタグリスト
      */
-    public final static List<String> INLINE_ELEMENT_NAMES = List.of("a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "dfn", "em", "i", "kbd", "mark", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "small", "span", "strong", "sub", "sup", "time", "u", "var", "wbr");
+    public static final List<String> INLINE_ELEMENT_NAMES = List.of("a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "dfn", "em", "i", "kbd", "mark", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "small", "span", "strong", "sub", "sup", "time", "u", "var", "wbr");
+
     /**
      * 翻訳除外要素のリスト
      */
-    public final static List<String> EXCLUDED_ELEMENT_NAMES = List.of("head", "pre", "tt");
-    /**
-     * 一つの翻訳リクエストチャンクに含めることが可能な最大文字数
-     */
-    private final static int MAX_REQUESTABLE_TEXT_LENGTH = 5000;
+    public static final List<String> EXCLUDED_ELEMENT_NAMES = List.of("head", "pre", "tt");
+
     private final Logger logger = LoggerFactory.getLogger(EPubTranslatorServiceImpl.class);
 
     private final Translator translator;
@@ -128,14 +127,14 @@ public class EPubTranslatorServiceImpl implements EPubTranslatorService {
                     processedSet.add(nextNode);
                 }
                 //翻訳対象Nodeでない、つまりテキストの末尾なので次のTranslateRequestを準備、但しWIPが0件でない場合に限る
-                else if (wip.getTarget().size() > 0) {
+                else if (wip.getTarget().isEmpty()) {
                     wip = new TranslateRequest(document, new ArrayList<>());
                     translateRequests.add(wip);
                     break;
                 }
             }
             //親ノードが、翻訳対象ノード以外の場合、テキストの末尾なので次のTranslateRequestを準備、但しWIPが0件でない場合に限る
-            if (!isTranslationTargetNode(node.getParentNode()) && wip.getTarget().size() > 0) {
+            if (!isTranslationTargetNode(node.getParentNode()) && wip.getTarget().isEmpty()) {
                 wip = new TranslateRequest(document, new ArrayList<>());
                 translateRequests.add(wip);
             }
