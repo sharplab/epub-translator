@@ -25,6 +25,7 @@ jobs:
         run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true --stacktrace
 
       - name: Create release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -35,7 +36,6 @@ jobs:
           prerelease: false
 
       - name: Upload release uber-jar asset
-        id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +46,6 @@ jobs:
           asset_content_type: application/java-archive
 
       - name: Upload release executable asset
-        id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
