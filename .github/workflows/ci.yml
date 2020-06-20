@@ -28,6 +28,9 @@ jobs:
         with:
           java-version: ${{ matrix.java_version }}
 
+      - name: Set up packages
+        run: sudo apt -y install gcc libc6-dev zlib1g-dev
+
       - name: Build uber-jar with Gradle
         run: ./gradlew quarkusBuild --uber-jar
 
