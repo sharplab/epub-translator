@@ -28,11 +28,8 @@ jobs:
         with:
           java-version: ${{ matrix.java_version }}
 
-      - name: Set up packages
-        run: sudo apt -y install gcc libc6-dev zlib1g-dev
-
       - name: Build uber-jar with Gradle
         run: ./gradlew quarkusBuild --uber-jar
 
       - name: Build native image
-        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true
+        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true --stacktrace --debug
