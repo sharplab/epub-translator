@@ -9,10 +9,8 @@ epub-translator is an utility to translate EPub books.
 
 ![Translation sample](./docs/image/translation-sample.png)
 
-
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
-
 
 ## Build
 

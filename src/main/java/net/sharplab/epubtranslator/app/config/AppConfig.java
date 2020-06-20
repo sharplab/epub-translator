@@ -1,6 +1,5 @@
 package net.sharplab.epubtranslator.app.config;
 
-import io.quarkus.runtime.configuration.ConfigurationException;
 import net.sharplab.epubtranslator.app.EPubTranslatorSetting;
 import net.sharplab.epubtranslator.core.driver.epub.EPubReader;
 import net.sharplab.epubtranslator.core.driver.epub.EPubWriter;
