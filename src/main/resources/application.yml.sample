@@ -1,0 +1,6 @@
+ePubTranslator:
+  deepL:
+    apiKey: <put your api key here>
+  language:
+    source: en        # default source language
+    destination: ja   # default destination language
