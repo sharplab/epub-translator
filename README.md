@@ -13,6 +13,15 @@ If you want to learn more about Quarkus, please visit its website: https://quark
 
 ## Build
 
+### Prerequisites
+
+- JDK 11
+- GraalVM (If you want to build a native image directly)
+- Docker or Podman (If you want to build a native image in a container)
+
+### Creating an uber-jar
+
+
 The application can be packaged using following command:
 
 ```
@@ -21,7 +30,7 @@ The application can be packaged using following command:
 
 It produces the `epub-translator-0.5.0-SNAPSHOT-runner.jar` file in the `build` directory.
 
-## Creating a native executable
+### Creating a native executable
 
 You can create a native executable in this way:
 ```
