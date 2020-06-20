@@ -5,6 +5,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.ls.LSSerializer;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,12 +18,12 @@ public class TranslateRequest {
     /**
      * 翻訳対象ドキュメント
      */
-    private Document document;
+    private final Document document;
 
     /**
      * 翻訳対象ノードのリスト
      */
-    private List<Node> target;
+    private final List<Node> target;
 
 
     /**
@@ -32,7 +33,7 @@ public class TranslateRequest {
      */
     public TranslateRequest(Document document, List<Node> target){
         this.document = document;
-        this.target = target;
+        this.target = Collections.unmodifiableList(target);
     }
 
     public Document getDocument() {

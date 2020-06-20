@@ -7,6 +7,7 @@ import net.sharplab.epubtranslator.core.model.FileEntry;
 import net.sharplab.epubtranslator.core.provider.epub.EPubContentFileProvider;
 
 import java.io.*;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -17,7 +18,7 @@ public class EPubReader {
     List<EPubContentFileProvider> ePubContentFileProviders;
 
     public EPubReader(List<EPubContentFileProvider> ePubContentFileProviders) {
-        this.ePubContentFileProviders = ePubContentFileProviders;
+        this.ePubContentFileProviders = Collections.unmodifiableList(ePubContentFileProviders);
     }
 
     public EPubFile read(File srcFile) {

@@ -1,5 +1,7 @@
 package net.sharplab.epubtranslator.core.model;
 
+import net.sharplab.epubtranslator.core.util.ArrayUtil;
+
 /**
  * EPubContentFile
  */
@@ -10,7 +12,7 @@ public class EPubContentFile {
 
     public EPubContentFile(String name, byte[] data){
         this.name = name;
-        this.data = data;
+        this.data = ArrayUtil.clone(data);
     }
 
     public String getName() {
@@ -18,7 +20,7 @@ public class EPubContentFile {
     }
 
     public byte[] getData() {
-        return data;
+        return ArrayUtil.clone(data);
     }
 
 }

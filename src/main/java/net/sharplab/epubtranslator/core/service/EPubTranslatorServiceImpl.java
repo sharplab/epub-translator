@@ -25,19 +25,16 @@ public class EPubTranslatorServiceImpl implements EPubTranslatorService {
     /**
      * インライン要素のタグリスト
      */
-    public final static List<String> INLINE_ELEMENT_NAMES = Collections.unmodifiableList(Arrays.asList(
-            "a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "dfn", "em", "i",
-            "kbd", "mark", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "small", "span",
-            "strong", "sub", "sup", "time", "u", "var", "wbr"));
+    public final static List<String> INLINE_ELEMENT_NAMES = List.of("a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "dfn", "em", "i", "kbd", "mark", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "small", "span", "strong", "sub", "sup", "time", "u", "var", "wbr");
 
     /**
      * 翻訳除外要素のリスト
      */
-    public final static List<String> EXCLUDED_ELEMENT_NAMES = Collections.unmodifiableList(Arrays.asList("head", "pre", "tt"));
+    public final static List<String> EXCLUDED_ELEMENT_NAMES = List.of("head", "pre", "tt");
 
-    private Logger logger = LoggerFactory.getLogger(EPubTranslatorServiceImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(EPubTranslatorServiceImpl.class);
 
-    private Translator translator;
+    private final Translator translator;
 
     public EPubTranslatorServiceImpl(Translator translator) {
         this.translator = translator;
@@ -230,10 +227,7 @@ public class EPubTranslatorServiceImpl implements EPubTranslatorService {
     }
 
     boolean isEmptyElement(Node node){
-        if(node.getNodeType() == Node.ELEMENT_NODE && !node.hasChildNodes()){
-            return true;
-        }
-        return false;
+        return node.getNodeType() == Node.ELEMENT_NODE && !node.hasChildNodes();
     }
 
     boolean lookupNode(Node node, Predicate<Node> condition){

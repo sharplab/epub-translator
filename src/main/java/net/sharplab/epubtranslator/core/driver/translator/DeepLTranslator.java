@@ -30,11 +30,9 @@ public class DeepLTranslator implements Translator {
 
     private static final String ENDPOINT = "https://api.deepl.com/v2/translate";
 
-    private final static List<String> IGNORE_ELEMENT_NAMES = Collections.unmodifiableList(Arrays.asList(
-            "abbr", "b", "cite", "code", "data", "dfn",
-            "kbd", "rp", "rt", "rtc", "ruby", "samp", "time", "var"));
+    private final static List<String> IGNORE_ELEMENT_NAMES = List.of("abbr", "b", "cite", "code", "data", "dfn", "kbd", "rp", "rt", "rtc", "ruby", "samp", "time", "var");
 
-    private String apiKey;
+    private final String apiKey;
 
     public DeepLTranslator(String apiKey) {
         this.apiKey = apiKey;
@@ -82,7 +80,7 @@ public class DeepLTranslator implements Translator {
 
     static class DeepLTranslationResponse {
 
-        private List<Translation> translations;
+        private final List<Translation> translations;
 
         @JsonCreator
         public DeepLTranslationResponse(@JsonProperty("translations") List<Translation> translations) {
@@ -96,7 +94,7 @@ public class DeepLTranslator implements Translator {
 
         static class Translation {
 
-            private String text;
+            private final String text;
 
             @JsonCreator
             public Translation(@JsonProperty("text") String text) {
