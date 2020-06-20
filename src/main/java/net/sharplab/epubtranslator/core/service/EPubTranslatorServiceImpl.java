@@ -8,6 +8,8 @@ import net.sharplab.epubtranslator.core.util.XmlUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.*;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSSerializer;
 
 import javax.enterprise.context.Dependent;
 import java.nio.charset.StandardCharsets;
@@ -62,7 +64,12 @@ public class EPubTranslatorServiceImpl implements EPubTranslatorService {
     private String translateXmlString(String xmlString, String srcLang, String dstLang){
         Document document = XmlUtils.parseXmlStringToDocument(xmlString);
         Document translatedDocument = translateDocument(document, srcLang, dstLang);
-        return XmlUtils.serialize(translatedDocument);
+        DOMImplementationLS domImplementation = (DOMImplementationLS) translatedDocument.getImplementation();
+        LSSerializer lsSerializer = domImplementation.createLSSerializer();
+        lsSerializer.getDomConfig().setParameter("xml-declaration", true);
+        lsSerializer.getDomConfig().setParameter("element-content-whitespace", true);
+        lsSerializer.getDomConfig().setParameter("canonical-form", false);
+        return lsSerializer.writeToString(translatedDocument);
     }
 
     private Document translateDocument(Document document, String srcLang, String dstLang) {

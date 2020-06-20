@@ -13,9 +13,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-arc'
     implementation 'io.quarkus:quarkus-config-yaml'
     implementation 'io.quarkus:quarkus-picocli'
-    implementation 'org.apache.httpcomponents:httpclient'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'nu.validator.htmlparser:htmlparser:1.4'
+    implementation 'io.quarkus:quarkus-rest-client-jackson'
 
     testImplementation 'io.quarkus:quarkus-junit5'
 }

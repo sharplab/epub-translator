@@ -1,11 +1,10 @@
 package net.sharplab.epubtranslator.core.service;
 
-import net.sharplab.epubtranslator.core.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,7 +32,7 @@ public class TranslateRequest {
      */
     public TranslateRequest(Document document, List<Node> target){
         this.document = document;
-        this.target = Collections.unmodifiableList(target);
+        this.target = target;
     }
 
     public Document getDocument() {
@@ -49,7 +48,11 @@ public class TranslateRequest {
      */
     public String getSourceXmlString(){
         StringBuilder stringBuilder = new StringBuilder();
-        LSSerializer lsSerializer = XmlUtils.getLsSerializer(document);
+        DOMImplementationLS domImplementation = (DOMImplementationLS) document.getImplementation();
+        LSSerializer lsSerializer = domImplementation.createLSSerializer();
+        lsSerializer.getDomConfig().setParameter("xml-declaration", false);
+        lsSerializer.getDomConfig().setParameter("element-content-whitespace", true);
+        lsSerializer.getDomConfig().setParameter("canonical-form", false);
         for (Node node : target) {
             stringBuilder.append(lsSerializer.writeToString(node));
         }

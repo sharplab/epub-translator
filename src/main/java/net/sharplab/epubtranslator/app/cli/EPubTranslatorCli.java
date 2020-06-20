@@ -50,7 +50,7 @@ public class EPubTranslatorCli implements Runnable {
             dstFileName = srcFileName + "." + dstLang;
         }
         else {
-            dstFileName = srcFileName.substring(0, srcFileName.lastIndexOf(".")) + "." + dstLang + srcFileName.substring(srcFileName.lastIndexOf("."), srcFileName.length());
+            dstFileName = srcFileName.substring(0, srcFileName.lastIndexOf('.')) + "." + dstLang + srcFileName.substring(srcFileName.lastIndexOf('.'), srcFileName.length());
         }
         return new File(src.getParent(), dstFileName);
     }
