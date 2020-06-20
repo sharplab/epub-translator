@@ -21,11 +21,29 @@ public class EPubReader {
         this.ePubContentFileProviders = Collections.unmodifiableList(ePubContentFileProviders);
     }
 
+    static byte[] readFile(File file) {
+        final int bufferSize = 1024;
+        final byte[] buffer = new byte[bufferSize];
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            while (true) {
+                int readSize = fileInputStream.read(buffer, 0, buffer.length);
+                if (readSize < 0) {
+                    break;
+                }
+                byteArrayOutputStream.write(buffer, 0, readSize);
+            }
+            return byteArrayOutputStream.toByteArray();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
     public EPubFile read(File srcFile) {
         List<EPubContentFile> contentFiles = new LinkedList<>();
-        try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(srcFile))){
+        try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(srcFile))) {
             for (ZipEntry zipEntry = zipInputStream.getNextEntry(); zipEntry != null; zipEntry = zipInputStream.getNextEntry()) {
-                if (zipEntry.isDirectory()){
+                if (zipEntry.isDirectory()) {
                     continue;
                 }
                 byte[] data = readZipEntry(zipInputStream);
@@ -39,40 +57,21 @@ public class EPubReader {
     }
 
     private EPubContentFile createEPubContentFile(FileEntry fileEntry) {
-        for(EPubContentFileProvider ePubContentFileProvider : ePubContentFileProviders){
-            if(ePubContentFileProvider.canHandle(fileEntry)){
+        for (EPubContentFileProvider ePubContentFileProvider : ePubContentFileProviders) {
+            if (ePubContentFileProvider.canHandle(fileEntry)) {
                 return ePubContentFileProvider.provide(fileEntry);
             }
         }
         throw new ContentFileProviderNotFoundException();
     }
 
-
-    static byte[] readFile(File file){
+    private byte[] readZipEntry(ZipInputStream zipInputStream) {
         final int bufferSize = 1024;
         final byte[] buffer = new byte[bufferSize];
-        try (FileInputStream fileInputStream = new FileInputStream(file)){
-            final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            while (true) {
-                int readSize = fileInputStream.read(buffer, 0, buffer.length);
-                if (readSize < 0){
-                    break;
-                }
-                byteArrayOutputStream.write(buffer, 0, readSize);
-            }
-            return byteArrayOutputStream.toByteArray();
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
-    private byte[] readZipEntry(ZipInputStream zipInputStream){
-        final int bufferSize = 1024;
-        final byte[] buffer = new byte[bufferSize];
-        try(ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()){
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
             while (true) {
                 int readSize = zipInputStream.read(buffer, 0, buffer.length);
-                if (readSize < 0){
+                if (readSize < 0) {
                     break;
                 }
                 byteArrayOutputStream.write(buffer, 0, readSize);

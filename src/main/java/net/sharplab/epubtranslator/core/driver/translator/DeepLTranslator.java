@@ -30,7 +30,7 @@ public class DeepLTranslator implements Translator {
         map.add("non_splitting_tags", String.join(",", EPubTranslatorServiceImpl.INLINE_ELEMENT_NAMES));
         map.add("ignore_tags", String.join(",", IGNORE_ELEMENT_NAMES));
         map.add("tag_handling", "xml");
-        for (String text: texts) {
+        for (String text : texts) {
             map.add("text", text);
         }
         return deepLTranslatorClient.translate(map).getTranslations().stream().map(DeepLTranslationResponse.Translation::getText).collect(Collectors.toList());

@@ -11,6 +11,7 @@ public interface EPubContentFileProvider {
 
     /**
      * 対象のファイルエントリを扱うことが出来るかを返却する
+     *
      * @param fileEntry ファイルエントリ
      * @return ファイルエントリを扱える場合true
      */
@@ -18,6 +19,7 @@ public interface EPubContentFileProvider {
 
     /**
      * EPubContentFileを生成する
+     *
      * @param fileEntry ファイルエントリ
      * @return EPubContentFile
      */

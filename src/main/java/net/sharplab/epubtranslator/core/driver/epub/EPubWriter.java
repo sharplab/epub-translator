@@ -12,15 +12,14 @@ import java.util.zip.ZipOutputStream;
 
 public class EPubWriter {
     public void write(EPubFile ePubFile, File dstFile) {
-        try(FileOutputStream fileOutputStream = new FileOutputStream(dstFile);
-            ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream)){
-            for(EPubContentFile contentFile : ePubFile.getContentFiles()){
+        try (FileOutputStream fileOutputStream = new FileOutputStream(dstFile);
+             ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream)) {
+            for (EPubContentFile contentFile : ePubFile.getContentFiles()) {
                 ZipEntry zipEntry = new ZipEntry(contentFile.getName());
                 zipOutputStream.putNextEntry(zipEntry);
                 zipOutputStream.write(contentFile.getData());
             }
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }

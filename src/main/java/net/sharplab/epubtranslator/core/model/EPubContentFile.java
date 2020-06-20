@@ -10,7 +10,7 @@ public class EPubContentFile {
     private final String name;
     private final byte[] data;
 
-    public EPubContentFile(String name, byte[] data){
+    public EPubContentFile(String name, byte[] data) {
         this.name = name;
         this.data = ArrayUtil.clone(data);
     }

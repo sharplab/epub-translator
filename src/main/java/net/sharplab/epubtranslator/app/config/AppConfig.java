@@ -17,25 +17,25 @@ import java.util.List;
 @Dependent
 public class AppConfig {
 
+    private EPubTranslatorSetting ePubTranslatorSetting;
+
     public AppConfig(EPubTranslatorSetting ePubTranslatorSetting) {
         this.ePubTranslatorSetting = ePubTranslatorSetting;
     }
 
-    private EPubTranslatorSetting ePubTranslatorSetting;
-
     @Produces
-    Translator translator(){
+    Translator translator() {
         return new DeepLTranslator(ePubTranslatorSetting.getDeepLApiKey());
     }
 
     @Produces
-    EPubReader ePubReader(){
+    EPubReader ePubReader() {
         List<EPubContentFileProvider> contentFileProviders = Arrays.asList(new EPubChapterProvider(), new DefaultEPubContentFileProvider());
         return new EPubReader(contentFileProviders);
     }
 
     @Produces
-    EPubWriter ePubWriter(){
+    EPubWriter ePubWriter() {
         return new EPubWriter();
     }
 }

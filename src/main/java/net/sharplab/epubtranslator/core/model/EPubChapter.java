@@ -11,7 +11,7 @@ public class EPubChapter extends EPubContentFile {
         super(name, data);
     }
 
-    public String getDataAsString(){
+    public String getDataAsString() {
         return new String(getData(), StandardCharsets.UTF_8);
     }
 }
