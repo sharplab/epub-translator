@@ -30,3 +30,6 @@ jobs:
 
       - name: Build uber-jar with Gradle
         run: ./gradlew quarkusBuild --uber-jar
+
+      - name: Build native image
+        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true
