@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * 翻訳リクエスト
- *
+ * <p>
  * 対象のドキュメントにおける翻訳要求の一つを表現するデータ構造
  */
 public class TranslateRequest {
@@ -27,10 +27,11 @@ public class TranslateRequest {
 
     /**
      * 翻訳リクエストのコンストラクタ
+     *
      * @param document 翻訳対象ドキュメント
-     * @param target 翻訳対象ノードのリスト
+     * @param target   翻訳対象ノードのリスト
      */
-    public TranslateRequest(Document document, List<Node> target){
+    public TranslateRequest(Document document, List<Node> target) {
         this.document = document;
         this.target = target;
     }
@@ -46,7 +47,7 @@ public class TranslateRequest {
     /**
      * 翻訳対象ノードの文字列表現を返却する
      */
-    public String getSourceXmlString(){
+    public String getSourceXmlString() {
         StringBuilder stringBuilder = new StringBuilder();
         DOMImplementationLS domImplementation = (DOMImplementationLS) document.getImplementation();
         LSSerializer lsSerializer = domImplementation.createLSSerializer();
@@ -60,7 +61,7 @@ public class TranslateRequest {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return getSourceXmlString();
     }
 }

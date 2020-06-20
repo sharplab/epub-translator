@@ -10,12 +10,12 @@ public class EPubChapterProvider implements EPubContentFileProvider {
 
     @Override
     public boolean canHandle(FileEntry fileEntry) {
-        return fileEntry.getName().endsWith(".xhtml") || fileEntry.getName().endsWith(".html")  || fileEntry.getName().endsWith(".htm");
+        return fileEntry.getName().endsWith(".xhtml") || fileEntry.getName().endsWith(".html") || fileEntry.getName().endsWith(".htm");
     }
 
     @Override
     public EPubChapter provide(FileEntry fileEntry) {
-        if(!canHandle(fileEntry)){
+        if (!canHandle(fileEntry)) {
             throw new IllegalArgumentException();
         }
         return new EPubChapter(fileEntry.getName(), fileEntry.getData());

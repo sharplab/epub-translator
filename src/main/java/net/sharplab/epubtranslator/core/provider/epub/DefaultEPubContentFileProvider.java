@@ -22,7 +22,7 @@ public class DefaultEPubContentFileProvider implements EPubContentFileProvider {
      */
     @Override
     public EPubContentFile provide(FileEntry fileEntry) {
-        if(!canHandle(fileEntry)){
+        if (!canHandle(fileEntry)) {
             throw new IllegalArgumentException();
         }
         return new EPubContentFile(fileEntry.getName(), fileEntry.getData());

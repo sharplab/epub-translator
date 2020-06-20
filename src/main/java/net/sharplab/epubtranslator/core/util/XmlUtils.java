@@ -19,7 +19,7 @@ import java.io.UncheckedIOException;
  */
 public class XmlUtils {
 
-    public static DocumentBuilder createDocumentBuilder(){
+    public static DocumentBuilder createDocumentBuilder() {
         DocumentBuilder builder;
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newDefaultInstance();
@@ -47,11 +47,12 @@ public class XmlUtils {
 
     /**
      * Parse xml string and return as {@link DocumentFragment}.
-     * @param document document that the new {@link DocumentFragment} belongs
+     *
+     * @param document  document that the new {@link DocumentFragment} belongs
      * @param xmlString xml string
      * @return {@link DocumentFragment} represents the xml string
      */
-    public static DocumentFragment parseXmlStringToDocumentFragment(Document document, String xmlString){
+    public static DocumentFragment parseXmlStringToDocumentFragment(Document document, String xmlString) {
         try {
             DocumentBuilder builder = createDocumentBuilder();
             String envelopedXmlString = "<envelope>" + xmlString + "</envelope>";

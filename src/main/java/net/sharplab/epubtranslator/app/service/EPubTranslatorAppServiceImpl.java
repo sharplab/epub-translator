@@ -21,7 +21,7 @@ public class EPubTranslatorAppServiceImpl implements EPubTranslatorAppService {
     }
 
     @Override
-    public void translateEPubFile(EPubTranslateParameters ePubTranslateParameters){
+    public void translateEPubFile(EPubTranslateParameters ePubTranslateParameters) {
         EPubFile ePubFile = ePubReader.read(ePubTranslateParameters.srcFile);
         EPubFile translated = ePubTranslatorService.translate(ePubFile, ePubTranslateParameters.getSrcLang(), ePubTranslateParameters.getDstLang());
         ePubWriter.write(translated, ePubTranslateParameters.dstFile);

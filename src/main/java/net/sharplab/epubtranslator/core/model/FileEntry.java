@@ -8,7 +8,7 @@ public class FileEntry {
     private String name;
     private byte[] data;
 
-    public FileEntry(String name, byte[] data){
+    public FileEntry(String name, byte[] data) {
         this.name = name;
         this.data = ArrayUtil.clone(data);
     }

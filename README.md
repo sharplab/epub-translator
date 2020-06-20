@@ -50,13 +50,6 @@ You can then execute your native executable with
 ./build/epub-translator-runner
 ```
 
-## Execution
-
-```
-java -jar epub-translator.jar --src <path to source epub file> [--dst <path to destination epub file>] \
-[--srcLang <source language>] [--dstLang <destination language>]
-```
-
 ## Configuration
 
 place application.yml to `<epub-translator working directory>/config/application.yml`
@@ -70,5 +63,12 @@ ePubTranslator:
   language:
     source: en        # default source language
     destination: ja   # default destination language
+```
+
+## Execution
+
+```
+java -jar epub-translator.jar --src <path to source epub file> [--dst <path to destination epub file>] \
+[--srcLang <source language>] [--dstLang <destination language>]
 ```
 

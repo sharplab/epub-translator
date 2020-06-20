@@ -25,7 +25,4 @@ public class ArrayUtil {
         return value == null ? null : value.clone();
     }
 
-    public static String[] clone(String[] value) {
-        return value == null ? null : value.clone();
-    }
 }
