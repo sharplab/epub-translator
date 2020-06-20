@@ -1,6 +1,6 @@
 package net.sharplab.epubtranslator.core.util;
 
-import net.sharplab.epubtranslator.core.exception.EPubContentHandlingException;
+import net.sharplab.epubtranslator.core.service.EPubTranslatorException;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.NodeList;
@@ -40,7 +40,7 @@ public class XmlUtils {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         } catch (SAXException e) {
-            throw new EPubContentHandlingException(e);
+            throw new EPubTranslatorException(e);
         }
     }
 
@@ -64,7 +64,7 @@ public class XmlUtils {
             }
             return (DocumentFragment) document.adoptNode(fragment);
         } catch (SAXException e) {
-            throw new EPubContentHandlingException(e);
+            throw new EPubTranslatorException(e);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

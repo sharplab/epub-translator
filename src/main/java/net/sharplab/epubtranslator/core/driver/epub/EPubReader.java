@@ -1,6 +1,6 @@
 package net.sharplab.epubtranslator.core.driver.epub;
 
-import net.sharplab.epubtranslator.core.exception.ContentFileProviderNotFoundException;
+import net.sharplab.epubtranslator.core.provider.epub.ContentFileProviderNotFoundException;
 import net.sharplab.epubtranslator.core.model.EPubContentFile;
 import net.sharplab.epubtranslator.core.model.EPubFile;
 import net.sharplab.epubtranslator.core.model.FileEntry;

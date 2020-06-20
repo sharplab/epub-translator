@@ -1,4 +1,4 @@
-package net.sharplab.epubtranslator.core.exception;
+package net.sharplab.epubtranslator.core.provider.epub;
 
 public class ContentFileProviderNotFoundException extends RuntimeException {
 }
