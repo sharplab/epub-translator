@@ -14,8 +14,8 @@ git checkout -b release-<version>
 
 gradle.properties
 ```
-webAuthn4JVersion=<version>.RELEASE
-latestReleasedWebAuthn4JVersion=<version>.RELEASE
+ePubTranslatorVersion=<version>.RELEASE
+latestReleasedEPubTranslatorVersion=<version>.RELEASE
 ```
 
 ##### Create a release commit
