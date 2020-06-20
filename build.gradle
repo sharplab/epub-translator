@@ -19,7 +19,7 @@ dependencies {
 }
 
 group 'net.sharplab.epubtranslator'
-version '0.5.0-SNAPSHOT'
+version "$ePubTranslatorVersion"
 
 compileJava {
     options.encoding = 'UTF-8'
@@ -41,4 +41,12 @@ quarkus {
 
 test {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
+}
+
+task generateReleaseNote(type: JavaExec) {
+    group = "documentation"
+    classpath = files('gradle/lib/github-release-notes-generator.jar')
+
+    args(latestReleasedEPubTranslatorVersion, file("build/release-note.md").absolutePath, "--spring.config.location=file:" + file("github-release-notes-generator.yml").absolutePath)
+
 }

@@ -4,8 +4,10 @@
 
 epub-translator is an utility to translate EPub books.
 
-- Utilize DeepL API (You need to register DeepL API plan)
+- Utilize [DeepL API](https://www.deepl.com/ja/docs-api/) (You need to register DeepL API plan)
 - Leave the original text for reference, and insert the translated text below per paragraph
+
+
 
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
