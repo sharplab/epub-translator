@@ -28,7 +28,7 @@ The application can be packaged using following command:
 ./gradlew quarkusBuild --uber-jar
 ```
 
-It produces the `epub-translator-0.5.0-SNAPSHOT-runner.jar` file in the `build` directory.
+It produces the `epub-translator-runner.jar` file in the `build` directory.
 
 ### Creating a native executable
 
@@ -45,7 +45,7 @@ Or, if you don't have GraalVM installed, you can run the native executable build
 You can then execute your native executable with 
 
 ```
-./build/epub-translator-1.0.0-SNAPSHOT-runner
+./build/epub-translator-runner
 ```
 
 ## Execution
