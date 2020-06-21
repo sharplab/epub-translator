@@ -1,0 +1,27 @@
+name: Pull Request Gate CI
+
+on: pull_request
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        java_version: [11]
+        os: [ubuntu-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Set up JDK ${{ matrix.java_version }}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java_version }}
+
+      - name: Build uber-jar with Gradle
+        run: ./gradlew quarkusBuild --uber-jar
+
+      - name: Build native image
+        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true --stacktrace
