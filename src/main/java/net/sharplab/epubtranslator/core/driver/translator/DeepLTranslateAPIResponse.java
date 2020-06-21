@@ -6,12 +6,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-public class DeepLTranslationResponse {
+public class DeepLTranslateAPIResponse {
 
     private final List<Translation> translations;
 
     @JsonCreator
-    public DeepLTranslationResponse(@JsonProperty("translations") List<Translation> translations) {
+    public DeepLTranslateAPIResponse(@JsonProperty("translations") List<Translation> translations) {
         this.translations = translations;
     }
 
