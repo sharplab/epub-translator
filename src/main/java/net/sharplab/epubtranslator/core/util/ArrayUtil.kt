@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.sharplab.epubtranslator.core.util
 
-package net.sharplab.epubtranslator.core.util;
-
-public class ArrayUtil {
-
-    private ArrayUtil() {
+object ArrayUtil {
+    fun clone(value: ByteArray): ByteArray {
+        return value.clone()
     }
 
-    public static byte[] clone(byte[] value) {
-        return value == null ? null : value.clone();
-    }
-
-    public static String[] clone(String[] value) {
-        return value == null ? null : value.clone();
+    fun clone(value: Array<String>): Array<String> {
+        return value.clone()
     }
 }

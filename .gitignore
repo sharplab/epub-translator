@@ -35,3 +35,4 @@ build/
 
 # Project specific
 src/main/resources/application.yml
+config/application.yml
