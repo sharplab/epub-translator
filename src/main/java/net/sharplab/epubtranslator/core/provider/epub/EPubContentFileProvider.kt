@@ -1,21 +1,19 @@
-package net.sharplab.epubtranslator.core.provider.epub;
+package net.sharplab.epubtranslator.core.provider.epub
 
-
-import net.sharplab.epubtranslator.core.model.EPubContentFile;
-import net.sharplab.epubtranslator.core.model.FileEntry;
+import net.sharplab.epubtranslator.core.model.EPubContentFile
+import net.sharplab.epubtranslator.core.model.FileEntry
 
 /**
  * ファイルエントリからEPubContentFileを生成するプロバイダ
  */
-public interface EPubContentFileProvider {
-
+interface EPubContentFileProvider {
     /**
      * 対象のファイルエントリを扱うことが出来るかを返却する
      *
      * @param fileEntry ファイルエントリ
      * @return ファイルエントリを扱える場合true
      */
-    boolean canHandle(FileEntry fileEntry);
+    fun canHandle(fileEntry: FileEntry): Boolean
 
     /**
      * EPubContentFileを生成する
@@ -23,5 +21,5 @@ public interface EPubContentFileProvider {
      * @param fileEntry ファイルエントリ
      * @return EPubContentFile
      */
-    EPubContentFile provide(FileEntry fileEntry);
+    fun provide(fileEntry: FileEntry): EPubContentFile
 }
