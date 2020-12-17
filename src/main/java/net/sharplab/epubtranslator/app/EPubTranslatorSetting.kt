@@ -1,0 +1,15 @@
+package net.sharplab.epubtranslator.app
+
+import org.eclipse.microprofile.config.inject.ConfigProperty
+import javax.enterprise.context.Dependent
+
+@Dependent
+class EPubTranslatorSetting {
+    @ConfigProperty(name = "ePubTranslator.deepL.apiKey")
+    var deepLApiKey: String? = null
+    @ConfigProperty(name = "ePubTranslator.language.source", defaultValue = "en")
+    var defaultSrcLang: String? = null
+    @ConfigProperty(name = "ePubTranslator.language.destination", defaultValue = "ja")
+    var defaultDstLang: String? = null
+
+}
