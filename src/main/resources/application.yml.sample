@@ -1,5 +1,6 @@
 ePubTranslator:
   deepL:
+    apiEndpoint: https://api.deepl.com
     apiKey: <put your api key here>
   language:
     source: en        # default source language

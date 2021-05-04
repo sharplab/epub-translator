@@ -5,6 +5,8 @@ import javax.enterprise.context.Dependent
 
 @Dependent
 class EPubTranslatorSetting {
+    @ConfigProperty(name = "ePubTranslator.deepL.apiEndpoint", defaultValue = "https://api.deepl.com")
+    var deepLApiEndpoint: String? = null
     @ConfigProperty(name = "ePubTranslator.deepL.apiKey")
     var deepLApiKey: String? = null
     @ConfigProperty(name = "ePubTranslator.language.source", defaultValue = "en")
