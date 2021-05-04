@@ -66,13 +66,13 @@ ePubTranslator:
 uber-jar
 
 ```
-java -jar epub-translator.jar --src <path to source epub file> [--dst <path to destination epub file>] \
+java -jar epub-translator-runner.jar --src <path to source epub file> [--dst <path to destination epub file>] \
 [--srcLang <source language>] [--dstLang <destination language>]
 ```
 
 executable
 
 ```
-./epub-translator --src <path to source epub file> [--dst <path to destination epub file>] \
+./epub-translator-runner --src <path to source epub file> [--dst <path to destination epub file>] \
 [--srcLang <source language>] [--dstLang <destination language>]
 ```
