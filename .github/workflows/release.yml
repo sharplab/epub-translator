@@ -19,10 +19,10 @@ jobs:
           java-version: 11
 
       - name: Build uber-jar with Gradle
-        run: ./gradlew quarkusBuild --uber-jar --stacktrace
+        run: ./gradlew quarkusBuild -Dquarkus.package.type=uber-jar
 
       - name: Build native image
-        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true --stacktrace
+        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true
 
       - name: Create release
         id: create_release
