@@ -1,8 +1,13 @@
+buildscript {
+    ext.quarkusVersion= '1.5.2.Final'
+    ext.kotlinVersion= '1.5.0'
+}
+
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version "1.5.0"
-    id "org.jetbrains.kotlin.plugin.allopen" version "1.5.0"
-    id 'io.quarkus'
+    id 'org.jetbrains.kotlin.jvm' version "${kotlinVersion}"
+    id "org.jetbrains.kotlin.plugin.allopen" version "${kotlinVersion}"
+    id 'io.quarkus' version "${quarkusVersion}"
 }
 
 repositories {
@@ -11,9 +16,9 @@ repositories {
 }
 
 dependencies {
-    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}"
+    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusVersion}")
     implementation 'io.quarkus:quarkus-kotlin'
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
     implementation 'io.quarkus:quarkus-arc'
     implementation 'io.quarkus:quarkus-config-yaml'
     implementation 'io.quarkus:quarkus-picocli'

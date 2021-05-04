@@ -4,8 +4,5 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
-    plugins {
-      id 'io.quarkus' version "${quarkusPluginVersion}"
-    }
 }
 rootProject.name='epub-translator'
