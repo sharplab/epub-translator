@@ -21,7 +21,7 @@ jobs:
           java-version: ${{ matrix.java_version }}
 
       - name: Build uber-jar with Gradle
-        run: ./gradlew quarkusBuild --uber-jar
+        run: ./gradlew quarkusBuild -Dquarkus.package.type=uber-jar
 
       - name: Build native image
-        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true --stacktrace
+        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true
