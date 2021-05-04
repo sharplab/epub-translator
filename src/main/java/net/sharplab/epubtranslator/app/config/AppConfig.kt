@@ -15,8 +15,15 @@ import javax.enterprise.inject.Produces
 class AppConfig(private val ePubTranslatorSetting: EPubTranslatorSetting) {
     @Produces
     fun translator(): Translator {
+        var apiEndpoint = ePubTranslatorSetting.deepLApiEndpoint
         val apiKey = ePubTranslatorSetting.deepLApiKey
-        return DeepLTranslator(apiKey!!)
+        if(apiEndpoint == null){
+            throw RuntimeException("ePubTranslator.deepL.apiEndpoint must be provided in application.yml")
+        }
+        if(apiKey == null){
+            throw RuntimeException("ePubTranslator.deepL.apiKey must be provided in application.yml")
+        }
+        return DeepLTranslator(apiEndpoint, apiKey)
     }
 
     @Produces

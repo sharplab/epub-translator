@@ -10,7 +10,7 @@ import java.util.stream.Collectors
 import javax.ws.rs.WebApplicationException
 import javax.ws.rs.core.MultivaluedMap
 
-class DeepLTranslator(private val apiKey: String) : Translator {
+class DeepLTranslator(private val apiEndpoint: String, private val apiKey: String) : Translator {
     override fun translate(texts: List<String>, srcLang: String, dstLang: String): List<String> {
         if (texts.isEmpty()) {
             return emptyList()
@@ -27,7 +27,7 @@ class DeepLTranslator(private val apiKey: String) : Translator {
         }
         val response: DeepLTranslateAPIResponse
         try {
-            val deepLClient = RestClientBuilder.newBuilder().baseUri(URI.create("https://api.deepl.com")).build(DeepLClient::class.java)
+            val deepLClient = RestClientBuilder.newBuilder().baseUri(URI.create(apiEndpoint)).build(DeepLClient::class.java)
             response = deepLClient.translate(map)
         } catch (e: WebApplicationException) {
             val message = String.format("%d error is thrown: %s", e.response.status, e.response.readEntity(String::class.java))
