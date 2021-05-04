@@ -26,7 +26,7 @@ If you want to learn more about Quarkus, please visit its website: https://quark
 The application can be packaged using following command:
 
 ```
-./gradlew quarkusBuild --uber-jar
+./gradlew quarkusBuild -Dquarkus.package.type=uber-jar
 ```
 
 It produces the `epub-translator-runner.jar` file in the `build` directory.
