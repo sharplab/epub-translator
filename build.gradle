@@ -1,6 +1,6 @@
 buildscript {
     ext.quarkusVersion= '2.2.2.Final'
-    ext.kotlinVersion= '1.5.30'
+    ext.kotlinVersion= '1.5.31'
 }
 
 plugins {
