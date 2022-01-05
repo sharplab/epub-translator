@@ -27,27 +27,30 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
 
         var exceptionOccurred = false
         for (contentFile in contentFiles) {
-            try {
                 // if exception occurred, skip ever after translation
                 if (!exceptionOccurred && contentFile is EPubChapter) {
-                    val contents = contentFile.dataAsString
-                    val translatedContents = translateXmlString(contents, srcLang, dstLang)
-                    val ePubChapter = EPubChapter(contentFile.name, translatedContents.toByteArray(StandardCharsets.UTF_8))
-                    logger.info("{} is translated.", ePubChapter.name)
-                    translatedContentFiles.add(ePubChapter)
+                    try {
+                        val contents = contentFile.dataAsString
+                        val translatedContents = translateXmlString(contents, srcLang, dstLang)
+                        val ePubChapter = EPubChapter(contentFile.name, translatedContents.toByteArray(StandardCharsets.UTF_8))
+                        logger.info("{} is translated.", ePubChapter.name)
+                        translatedContentFiles.add(ePubChapter)
+                    } catch (e: Exception) {
+                        // if exception occurred , check if we should quit gracefully
+                        if (ePubTranslatorSetting.gracefulQuit == true) {
+                            // set skip flag to true
+                            exceptionOccurred = true
+                            // recover the original contents
+                            translatedContentFiles.add(contentFile)
+                            logger.error("gracefulQuit activate, quit before save on exception: {}", e)
+                        } else {
+                            // let it crash as old days
+                            throw e
+                        }
+                    }
                 } else {
                     translatedContentFiles.add(contentFile)
                 }
-            } catch (e: Exception) {
-                // if exception occurred , check if we should quit gracefully
-                if (ePubTranslatorSetting.gracefulQuit == true) {
-                    exceptionOccurred = true
-                    logger.error("gracefulQuit activate, quit before save on exception: {}", e)
-                } else {
-                    // let it crash as old days
-                    throw e
-                }
-            }
         }
         return EPubFile(translatedContentFiles)
     }
