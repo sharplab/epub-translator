@@ -57,8 +57,10 @@ ePubTranslator:
     apiEndpoint: https://api.deepl.com # If you subscribe free API plan, use "https://api-free.deepl.com" instead.
     apiKey: <put your api key here>
   language:
-    source: en        # default source language
-    destination: ja   # default destination language
+    source: en          # default source language
+    destination: ja     # default destination language
+  controlPanel:
+    gracefulQuit: false # if set to true, quit gracefully when exception occurs
 ```
 
 ## Execution
