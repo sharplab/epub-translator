@@ -16,5 +16,8 @@ class EPubTranslatorSetting {
     // gracefully quit discuss on issue #60 , defaulting to false due to backward compatibility concerns
     @ConfigProperty(name = "ePubTranslator.controlPanel.gracefulQuit")
     var gracefulQuit: Boolean? = false
+    // skip error page discuss on issue #4, *higher priority then gracefully quit
+    @ConfigProperty(name = "ePubTranslator.controlPanel.skipError")
+    var skipError: Boolean? = false
 
 }

@@ -27,30 +27,36 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
 
         var exceptionOccurred = false
         for (contentFile in contentFiles) {
-                // if exception occurred, skip ever after translation
-                if (!exceptionOccurred && contentFile is EPubChapter) {
-                    try {
-                        val contents = contentFile.dataAsString
-                        val translatedContents = translateXmlString(contents, srcLang, dstLang)
-                        val ePubChapter = EPubChapter(contentFile.name, translatedContents.toByteArray(StandardCharsets.UTF_8))
-                        logger.info("{} is translated.", ePubChapter.name)
-                        translatedContentFiles.add(ePubChapter)
-                    } catch (e: Exception) {
-                        // if exception occurred , check if we should quit gracefully
-                        if (ePubTranslatorSetting.gracefulQuit == true) {
-                            // set skip flag to true
-                            exceptionOccurred = true
-                            // recover the original contents
-                            translatedContentFiles.add(contentFile)
-                            logger.error("gracefulQuit activate, quit before save on exception: {}", e)
-                        } else {
-                            // let it crash as old days
-                            throw e
-                        }
+            // if exception occurred with graceful quit, skip ever after translation
+            if (!exceptionOccurred && contentFile is EPubChapter) {
+                try {
+                    val contents = contentFile.dataAsString
+                    val translatedContents = translateXmlString(contents, srcLang, dstLang)
+                    val ePubChapter = EPubChapter(contentFile.name, translatedContents.toByteArray(StandardCharsets.UTF_8))
+                    logger.info("{} is translated.", ePubChapter.name)
+                    translatedContentFiles.add(ePubChapter)
+                } catch (e: Exception) {
+                    // if exception occurred and skipError = true, ignore current error
+                    if (ePubTranslatorSetting.skipError == true) {
+                        logger.error("skip error on page {}, error: {}", contentFile.name, e)
+                        translatedContentFiles.add(contentFile)
+                        continue
                     }
-                } else {
-                    translatedContentFiles.add(contentFile)
+                    // if exception occurred , check if we should quit gracefully
+                    if (ePubTranslatorSetting.gracefulQuit == true) {
+                        // set skip flag to true
+                        exceptionOccurred = true
+                        // recover the original contents
+                        translatedContentFiles.add(contentFile)
+                        logger.error("gracefulQuit activate, quit before save on exception: {}", e)
+                        continue
+                    }
+                    // let it crash as old days
+                    throw e
                 }
+            } else {
+                translatedContentFiles.add(contentFile)
+            }
         }
         return EPubFile(translatedContentFiles)
     }
@@ -244,10 +250,12 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
          */
         @Suppress("SpellCheckingInspection")
         private const val MAX_REQUESTABLE_TEXT_LENGTH = 5000
+
         /**
          * インライン要素のタグリスト
          */
         val INLINE_ELEMENT_NAMES = listOf("a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "dfn", "em", "i", "kbd", "mark", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "small", "span", "strong", "sub", "sup", "time", "u", "var", "wbr")
+
         /**
          * 翻訳除外要素のリスト
          */

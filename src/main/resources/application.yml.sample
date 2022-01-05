@@ -7,3 +7,4 @@ ePubTranslator:
     destination: ja   # default destination language
   controlPanel:
     gracefulQuit: false # if true, quit gracefully when exception occurs
+    skipError: false # if true, skip error pages
