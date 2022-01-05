@@ -13,7 +13,7 @@ class DeepLTranslator(private val apiEndpoint: String, private val apiKey: Strin
     private val logger = LoggerFactory.getLogger(DeepLTranslator::class.java)
 
     // recoverable errors, we can do some retry
-    private val retryableErrors  = listOf(DeepLStatusCode.TOO_MANY_REQUESTS.code)
+    private val retryableErrors = listOf(DeepLStatusCode.TOO_MANY_REQUESTS.code)
 
     // default cool down interval, no need to put it into configure for now
     private var coolDownInterval = 30000L
@@ -33,7 +33,7 @@ class DeepLTranslator(private val apiEndpoint: String, private val apiKey: Strin
             map.add("text", text)
         }
         var retryTimes = 3
-        while (--retryTimes > 0) {
+        while (true) {
             try {
                 val deepLClient = RestClientBuilder.newBuilder().baseUri(URI.create(apiEndpoint)).build(DeepLClient::class.java)
                 val response = deepLClient.translate(map)
@@ -42,9 +42,9 @@ class DeepLTranslator(private val apiEndpoint: String, private val apiKey: Strin
             } catch (e: WebApplicationException) {
                 val statusCode = e.response.status
                 // should try again on recoverable errors (like 429)
-                if(retryableErrors.contains(statusCode)) {
+                if (--retryTimes > 0 && retryableErrors.contains(statusCode)) {
                     // if it's code 429 means request to quick
-                    if(DeepLStatusCode.TOO_MANY_REQUESTS.code == statusCode) {
+                    if (DeepLStatusCode.TOO_MANY_REQUESTS.code == statusCode) {
                         logger.info("request too quick, wait for {} ms", coolDownInterval)
                         Thread.sleep(coolDownInterval)
                     }
@@ -57,7 +57,6 @@ class DeepLTranslator(private val apiEndpoint: String, private val apiKey: Strin
                 }
             }
         }
-        return listOf()
     }
 
     companion object {
