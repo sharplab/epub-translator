@@ -1,5 +1,6 @@
 package net.sharplab.epubtranslator.core.service
 
+import net.sharplab.epubtranslator.app.EPubTranslatorSetting
 import net.sharplab.epubtranslator.core.driver.translator.Translator
 import net.sharplab.epubtranslator.core.model.EPubChapter
 import net.sharplab.epubtranslator.core.model.EPubContentFile
@@ -11,27 +12,41 @@ import org.w3c.dom.Document
 import org.w3c.dom.Node
 import org.w3c.dom.ls.DOMImplementationLS
 import java.nio.charset.StandardCharsets
-import java.util.*
 import java.util.function.Consumer
 import java.util.function.Predicate
 import javax.enterprise.context.Dependent
 
 @Dependent
-class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTranslatorService {
+class EPubTranslatorServiceImpl(private val translator: Translator, private val ePubTranslatorSetting: EPubTranslatorSetting) : EPubTranslatorService {
 
     private val logger = LoggerFactory.getLogger(EPubTranslatorServiceImpl::class.java)
 
     override fun translate(ePubFile: EPubFile, srcLang: String, dstLang: String): EPubFile {
         val contentFiles = ePubFile.contentFiles
-        val translatedContentFiles = contentFiles.map { contentFile: EPubContentFile ->
-            if (contentFile is EPubChapter) {
-                val contents = contentFile.dataAsString
-                val translatedContents = translateXmlString(contents, srcLang, dstLang)
-                val ePubChapter = EPubChapter(contentFile.name, translatedContents.toByteArray(StandardCharsets.UTF_8))
-                logger.info("{} is translated.", ePubChapter.name)
-                return@map ePubChapter
-            } else {
-                return@map contentFile
+        val translatedContentFiles = ArrayList<EPubContentFile>()
+
+        var exceptionOccurred = false
+        for (contentFile in contentFiles) {
+            try {
+                // if exception occurred, skip ever after translation
+                if (!exceptionOccurred && contentFile is EPubChapter) {
+                    val contents = contentFile.dataAsString
+                    val translatedContents = translateXmlString(contents, srcLang, dstLang)
+                    val ePubChapter = EPubChapter(contentFile.name, translatedContents.toByteArray(StandardCharsets.UTF_8))
+                    logger.info("{} is translated.", ePubChapter.name)
+                    translatedContentFiles.add(ePubChapter)
+                } else {
+                    translatedContentFiles.add(contentFile)
+                }
+            } catch (e: Exception) {
+                // if exception occurred , check if we should quit gracefully
+                if (ePubTranslatorSetting.gracefulQuit == true) {
+                    exceptionOccurred = true
+                    logger.error("gracefulQuit activate, quit before save on exception: {}", e)
+                } else {
+                    // let it crash as old days
+                    throw e
+                }
             }
         }
         return EPubFile(translatedContentFiles)

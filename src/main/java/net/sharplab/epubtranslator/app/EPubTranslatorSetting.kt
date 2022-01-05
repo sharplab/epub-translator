@@ -13,5 +13,8 @@ class EPubTranslatorSetting {
     var defaultSrcLang: String? = null
     @ConfigProperty(name = "ePubTranslator.language.destination", defaultValue = "ja")
     var defaultDstLang: String? = null
+    // gracefully quit discuss on issue #60 , defaulting to false due to backward compatibility concerns
+    @ConfigProperty(name = "ePubTranslator.controlPanel.gracefulQuit")
+    var gracefulQuit: Boolean? = false
 
 }

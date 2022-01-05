@@ -5,3 +5,5 @@ ePubTranslator:
   language:
     source: en        # default source language
     destination: ja   # default destination language
+  controlPanel:
+    gracefulQuit: false # if true, quit gracefully when exception occurs
