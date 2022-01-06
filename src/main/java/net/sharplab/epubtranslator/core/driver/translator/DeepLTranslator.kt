@@ -1,43 +1,39 @@
 package net.sharplab.epubtranslator.core.driver.translator
 
+import net.sharplab.deepl4j.DeepLApi
+import net.sharplab.deepl4j.DeepLApiFactory
+import net.sharplab.deepl4j.client.ApiException
+import net.sharplab.deepl4j.model.Translations
 import net.sharplab.epubtranslator.core.service.EPubTranslatorServiceImpl
-import org.eclipse.microprofile.rest.client.RestClientBuilder
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl
-import java.io.IOException
-import java.io.UncheckedIOException
-import java.net.URI
-import java.util.stream.Collectors
 import javax.ws.rs.WebApplicationException
-import javax.ws.rs.core.MultivaluedMap
 
-class DeepLTranslator(private val apiEndpoint: String, private val apiKey: String) : Translator {
+class DeepLTranslator(apiEndpoint: String, apiKey: String) : Translator {
+
+    private val deepLApi : DeepLApi;
+
+    init {
+        deepLApi = DeepLApiFactory().create(apiKey)
+        deepLApi.apiClient.servers[0].URL = apiEndpoint
+    }
+
     override fun translate(texts: List<String>, srcLang: String, dstLang: String): List<String> {
         if (texts.isEmpty()) {
             return emptyList()
         }
-        val map: MultivaluedMap<String, String> = MultivaluedMapImpl()
-        map.add("auth_key", apiKey)
-        map.add("source_lang", srcLang)
-        map.add("target_lang", dstLang)
-        map.add("non_splitting_tags", java.lang.String.join(",", EPubTranslatorServiceImpl.INLINE_ELEMENT_NAMES))
-        map.add("ignore_tags", java.lang.String.join(",", IGNORE_ELEMENT_NAMES))
-        map.add("tag_handling", "xml")
-        for (text in texts) {
-            map.add("text", text)
-        }
-        val response: DeepLTranslateAPIResponse
+        val nonSplittingTags = java.lang.String.join(",", EPubTranslatorServiceImpl.INLINE_ELEMENT_NAMES)
+        val ignoreTags = java.lang.String.join(",", IGNORE_ELEMENT_NAMES)
+        val translations: Translations
         try {
-            val deepLClient = RestClientBuilder.newBuilder().baseUri(URI.create(apiEndpoint)).build(DeepLClient::class.java)
-            response = deepLClient.translate(map)
-        } catch (e: WebApplicationException) {
-            val message = String.format("%d error is thrown: %s", e.response.status, e.response.readEntity(String::class.java))
+            translations = deepLApi.translate(texts, srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
+        } catch (e: ApiException) {
+            val message = String.format("%d error is thrown: %s", e.code, e.responseBody)
             throw DeepLTranslatorException(message, e)
         }
-        return response.translations.map(DeepLTranslateAPIResponse.Translation::text)
+        return translations.translations.map{ it.text }
     }
 
     companion object {
-        private val IGNORE_ELEMENT_NAMES = java.util.List.of("abbr", "b", "cite", "code", "data", "dfn", "kbd", "rp", "rt", "rtc", "ruby", "samp", "time", "var")
+        private val IGNORE_ELEMENT_NAMES = listOf("abbr", "b", "cite", "code", "data", "dfn", "kbd", "rp", "rt", "rtc", "ruby", "samp", "time", "var")
     }
 
 }

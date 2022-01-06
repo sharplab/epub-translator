@@ -1,6 +1,7 @@
 buildscript {
     ext.quarkusVersion= '1.13.3.Final'
     ext.kotlinVersion= '1.5.0'
+    ext.deepl4jVersion = '0.1.0.RELEASE'
 }
 
 plugins {
@@ -11,8 +12,11 @@ plugins {
 }
 
 repositories {
-     mavenLocal()
-     mavenCentral()
+    mavenLocal()
+    mavenCentral()
+    maven {
+        url "https://jitpack.io"
+    }
 }
 
 dependencies {
@@ -23,6 +27,8 @@ dependencies {
     implementation 'io.quarkus:quarkus-config-yaml'
     implementation 'io.quarkus:quarkus-picocli'
     implementation 'io.quarkus:quarkus-rest-client-jackson'
+
+    implementation "com.github.sharplab:deepl4j:$deepl4jVersion"
 
     testImplementation 'io.quarkus:quarkus-junit5'
 }
