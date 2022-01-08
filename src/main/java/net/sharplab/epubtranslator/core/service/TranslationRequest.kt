@@ -10,7 +10,7 @@ import org.w3c.dom.ls.DOMImplementationLS
  *
  * 対象のドキュメントにおける翻訳要求の一つを表現するデータ構造
  */
-class TranslateRequest
+class TranslationRequest
 /**
  * 翻訳リクエストのコンストラクタ
  *

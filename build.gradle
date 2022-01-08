@@ -1,7 +1,7 @@
 buildscript {
     ext.quarkusVersion= '1.13.3.Final'
     ext.kotlinVersion= '1.5.0'
-    ext.deepl4jVersion = '0.1.0.RELEASE'
+    ext.deepl4jVersion = 'split-translate-api-SNAPSHOT'
 }
 
 plugins {
@@ -26,6 +26,8 @@ dependencies {
     implementation 'io.quarkus:quarkus-arc'
     implementation 'io.quarkus:quarkus-config-yaml'
     implementation 'io.quarkus:quarkus-picocli'
+    implementation 'io.quarkus:quarkus-jdbc-h2'
+    implementation 'io.quarkus:quarkus-hibernate-orm-panache-kotlin'
     implementation 'io.quarkus:quarkus-rest-client-jackson'
 
     implementation "com.github.sharplab:deepl4j:$deepl4jVersion"

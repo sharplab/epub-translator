@@ -1,5 +1,6 @@
 package net.sharplab.epubtranslator.core.service
 
+import net.sharplab.deepl4j.client.ApiException
 import net.sharplab.epubtranslator.core.driver.translator.Translator
 import net.sharplab.epubtranslator.core.model.EPubChapter
 import net.sharplab.epubtranslator.core.model.EPubContentFile
@@ -11,13 +12,12 @@ import org.w3c.dom.Document
 import org.w3c.dom.Node
 import org.w3c.dom.ls.DOMImplementationLS
 import java.nio.charset.StandardCharsets
-import java.util.*
 import java.util.function.Consumer
 import java.util.function.Predicate
 import javax.enterprise.context.Dependent
 
 @Dependent
-class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTranslatorService {
+class EPubTranslatorServiceImpl(private val translator: Translator, private val translationMemoryService: TranslationMemoryService) : EPubTranslatorService {
 
     private val logger = LoggerFactory.getLogger(EPubTranslatorServiceImpl::class.java)
 
@@ -26,7 +26,7 @@ class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTransl
         val translatedContentFiles = contentFiles.map { contentFile: EPubContentFile ->
             if (contentFile is EPubChapter) {
                 val contents = contentFile.dataAsString
-                val translatedContents = translateXmlString(contents, srcLang, dstLang)
+                val translatedContents = translateEPubXhtmlString(contents, srcLang, dstLang)
                 val ePubChapter = EPubChapter(contentFile.name, translatedContents.toByteArray(StandardCharsets.UTF_8))
                 logger.info("{} is translated.", ePubChapter.name)
                 return@map ePubChapter
@@ -37,9 +37,9 @@ class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTransl
         return EPubFile(translatedContentFiles)
     }
 
-    fun translateXmlString(xmlString: String, srcLang: String, dstLang: String): String {
-        val document = parseXmlStringToDocument(xmlString)
-        val translatedDocument = translateDocument(document, srcLang, dstLang)
+    fun translateEPubXhtmlString(xhtmlString: String, srcLang: String, dstLang: String): String {
+        val document = parseXmlStringToDocument(xhtmlString)
+        val translatedDocument = translateEPubXhtmlDocument(document, srcLang, dstLang)
         val domImplementation = translatedDocument.implementation as DOMImplementationLS
         val lsSerializer = domImplementation.createLSSerializer()
         lsSerializer.domConfig.setParameter("xml-declaration", true)
@@ -48,12 +48,31 @@ class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTransl
         return lsSerializer.writeToString(translatedDocument)
     }
 
-    private fun translateDocument(document: Document, srcLang: String, dstLang: String): Document {
+    private fun translateEPubXhtmlDocument(document: Document, srcLang: String, dstLang: String): Document {
         preProcessNode(document)
-        val translateRequests = generateTranslateRequests(document)
-        val translateRequestChunks = formTranslateRequestChunks(translateRequests)
-        replaceWithTranslatedText(translateRequestChunks, srcLang, dstLang)
+        var translationRequests = generateTranslationRequests(document)
+        translationRequests = translateWithTranslationMemory(translationRequests, srcLang, dstLang)
+        val translationRequestChunks = formTranslationRequestChunks(translationRequests)
+        translateWithDeepL(translationRequestChunks, srcLang, dstLang)
         return document
+    }
+
+    private fun translateWithTranslationMemory(
+        translationRequests: List<TranslationRequest>,
+        srcLang: String,
+        dstLang: String
+    ): List<TranslationRequest> {
+        val list = ArrayList<TranslationRequest>()
+        translationRequests.forEach {
+            val translatedString = translationMemoryService.load(it.sourceXmlString, srcLang, dstLang)
+            if(translatedString == null){
+                list.add(it)
+            }
+            else{
+                replaceWithTranslatedString(it, translatedString)
+            }
+        }
+        return list
     }
 
     /**
@@ -62,12 +81,12 @@ class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTransl
      * @param document 翻訳元のXML文書
      * @return 翻訳リクエストのリスト
      */
-    private fun generateTranslateRequests(document: Document): List<TranslateRequest> {
-        val translateRequests: MutableList<TranslateRequest> = ArrayList()
-        val wip = TranslateRequest(document, ArrayList())
-        translateRequests.add(wip)
-        walkToGenerateTranslateRequests(document, HashSet(), translateRequests)
-        return translateRequests.filter { it.sourceXmlString.trim(' ').isNotEmpty() }
+    private fun generateTranslationRequests(document: Document): List<TranslationRequest> {
+        val translationRequests: MutableList<TranslationRequest> = ArrayList()
+        val wip = TranslationRequest(document, ArrayList())
+        translationRequests.add(wip)
+        walkToGenerateTranslationRequests(document, HashSet(), translationRequests)
+        return translationRequests.filter { it.sourceXmlString.trim(' ').isNotEmpty() }
     }
 
     /**
@@ -75,9 +94,9 @@ class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTransl
      *
      * @param node              走査対象のノード
      * @param processedSet      処理済ノードのセット
-     * @param translateRequests 翻訳リクエストのリスト
+     * @param translationRequests 翻訳リクエストのリスト
      */
-    private fun walkToGenerateTranslateRequests(node: Node, processedSet: MutableSet<Node>, translateRequests: MutableList<TranslateRequest>) {
+    private fun walkToGenerateTranslationRequests(node: Node, processedSet: MutableSet<Node>, translationRequests: MutableList<TranslationRequest>) {
         val document = node.ownerDocument
         //処理済のNodeはスキップ
         if (processedSet.contains(node)) {
@@ -86,7 +105,7 @@ class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTransl
         if (isExcludedNode(node)) {
             return
         }
-        var wip = translateRequests.last()
+        var wip = translationRequests.last()
         //翻訳対象ノードの場合
         if (isTranslationTargetNode(node)) { //テキスト中なので、リストに追加
             wip.target.add(node)
@@ -98,22 +117,22 @@ class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTransl
                     wip.target.add(nextNode)
                     processedSet.add(nextNode)
                 } else if (wip.target.isEmpty()) {
-                    wip = TranslateRequest(document, ArrayList())
-                    translateRequests.add(wip)
+                    wip = TranslationRequest(document, ArrayList())
+                    translationRequests.add(wip)
                     break
                 }
                 nextNode = nextNode.nextSibling
             }
             //親ノードが、翻訳対象ノード以外の場合、テキストの末尾なので次のTranslateRequestを準備、但しWIPが0件でない場合に限る
             if (!isTranslationTargetNode(node.parentNode) && wip.target.size > 0) {
-                wip = TranslateRequest(document, ArrayList())
-                translateRequests.add(wip)
+                wip = TranslationRequest(document, ArrayList())
+                translationRequests.add(wip)
             }
         } else { //子ノードを走査し、再帰処理
             val childNodes = node.childNodes
             for (i in 0 until childNodes.length) {
                 val child = childNodes.item(i)
-                walkToGenerateTranslateRequests(child, processedSet, translateRequests)
+                walkToGenerateTranslationRequests(child, processedSet, translationRequests)
             }
         }
     }
@@ -131,52 +150,59 @@ class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTransl
     /**
      * 翻訳リクエストのリストを翻訳リクエストのチャンクに構成する
      *
-     * @param translateRequests 翻訳リクエストのリスト
+     * @param translationRequests 翻訳リクエストのリスト
      * @return 翻訳リクエストのチャンクのリスト
      */
-    private fun formTranslateRequestChunks(translateRequests: List<TranslateRequest>): List<TranslateRequestChunk> {
+    private fun formTranslationRequestChunks(translationRequests: List<TranslationRequest>): List<TranslationRequestChunk> {
         var textLengthCounter = 0
-        val translateRequestChunks: MutableList<TranslateRequestChunk> = ArrayList()
-        var workingTranslateRequestList: MutableList<TranslateRequest> = ArrayList()
-        for (translateRequest in translateRequests) {
+        val translationRequestChunks: MutableList<TranslationRequestChunk> = ArrayList()
+        var workingTranslationRequestList: MutableList<TranslationRequest> = ArrayList()
+        for (translateRequest in translationRequests) {
             val sourceXmlString = translateRequest.sourceXmlString
             if (textLengthCounter + sourceXmlString.length > MAX_REQUESTABLE_TEXT_LENGTH) {
-                translateRequestChunks.add(TranslateRequestChunk(workingTranslateRequestList))
-                workingTranslateRequestList = ArrayList()
+                translationRequestChunks.add(TranslationRequestChunk(workingTranslationRequestList))
+                workingTranslationRequestList = ArrayList()
                 textLengthCounter = 0
             }
-            workingTranslateRequestList.add(translateRequest)
+            workingTranslationRequestList.add(translateRequest)
             textLengthCounter += sourceXmlString.length
         }
-        translateRequestChunks.add(TranslateRequestChunk(workingTranslateRequestList))
-        return translateRequestChunks
+        translationRequestChunks.add(TranslationRequestChunk(workingTranslationRequestList))
+        return translationRequestChunks
     }
 
     /**
      * XML文書中の翻訳リクエストのチャンクで指定された箇所を翻訳する
      *
-     * @param translateRequestChunks 翻訳リクエストチャンクのリスト
+     * @param translationRequestChunks 翻訳リクエストチャンクのリスト
      */
-    private fun replaceWithTranslatedText(translateRequestChunks: List<TranslateRequestChunk>, srcLang: String, dstLang: String) {
-        translateRequestChunks.forEach(Consumer { translateRequestChunk: TranslateRequestChunk ->
-            val translateRequests = translateRequestChunk.translateRequests
-            val translateResponse = translator.translate(translateRequests.map(TranslateRequest::sourceXmlString), srcLang, dstLang)
-            for (i in translateRequests.indices) {
-                val translateRequest = translateRequests[i]
-                val document = translateRequest.document
-                val firstNode = translateRequest.target[0]
-                val documentFragment = parseXmlStringToDocumentFragment(document, translateResponse[i])
-                val translatedTextContainerDiv = document.createElement("div")
-                translatedTextContainerDiv.appendChild(documentFragment)
-                firstNode.parentNode.insertBefore(translatedTextContainerDiv, firstNode)
-                val originalTextContainerDiv = document.createElement("div")
-                translatedTextContainerDiv.parentNode.insertBefore(originalTextContainerDiv, translatedTextContainerDiv)
-                val targetNodes = translateRequest.target
-                for (targetNode in targetNodes) {
-                    originalTextContainerDiv.appendChild(targetNode)
-                }
+    private fun translateWithDeepL(translationRequestChunks: List<TranslationRequestChunk>, srcLang: String, dstLang: String) {
+        translationRequestChunks.forEach(Consumer { translationRequestChunk: TranslationRequestChunk ->
+            val translationRequests = translationRequestChunk.translationRequests
+            val translationResponse: List<String> =
+                translator.translate(translationRequests.map(TranslationRequest::sourceXmlString), srcLang, dstLang)
+            for (i in translationRequests.indices) {
+                val translationRequest = translationRequests[i]
+                val translatedString = translationResponse[i]
+                translationMemoryService.save(translationRequest.sourceXmlString, translatedString, srcLang, dstLang)
+                replaceWithTranslatedString(translationRequest, translatedString)
             }
         })
+    }
+
+    private fun replaceWithTranslatedString(translationRequest: TranslationRequest, translatedString: String){
+        val document = translationRequest.document
+        val firstNode = translationRequest.target.first()
+        val documentFragment = parseXmlStringToDocumentFragment(document, translatedString)
+        val translatedTextContainerDiv = document.createElement("div")
+        translatedTextContainerDiv.appendChild(documentFragment)
+        firstNode.parentNode.insertBefore(translatedTextContainerDiv, firstNode)
+        val originalTextContainerDiv = document.createElement("div")
+        translatedTextContainerDiv.parentNode.insertBefore(originalTextContainerDiv, translatedTextContainerDiv)
+        val targetNodes = translationRequest.target
+        for (targetNode in targetNodes) {
+            originalTextContainerDiv.appendChild(targetNode)
+        }
     }
 
     private fun preProcessNode(node: Node) {
@@ -225,7 +251,7 @@ class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTransl
          * 一つの翻訳リクエストチャンクに含めることが可能な最大文字数
          */
         @Suppress("SpellCheckingInspection")
-        private const val MAX_REQUESTABLE_TEXT_LENGTH = 5000
+        private const val MAX_REQUESTABLE_TEXT_LENGTH = 3000
         /**
          * インライン要素のタグリスト
          */
@@ -233,7 +259,7 @@ class EPubTranslatorServiceImpl(private val translator: Translator) : EPubTransl
         /**
          * 翻訳除外要素のリスト
          */
-        val EXCLUDED_ELEMENT_NAMES = listOf("head", "pre", "tt")
+        private val EXCLUDED_ELEMENT_NAMES = listOf("head", "pre", "tt")
     }
 
 }

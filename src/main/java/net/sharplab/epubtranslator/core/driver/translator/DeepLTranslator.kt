@@ -13,7 +13,7 @@ class DeepLTranslator(apiEndpoint: String, apiKey: String) : Translator {
 
     init {
         deepLApi = DeepLApiFactory().create(apiKey)
-        deepLApi.apiClient.servers[0].URL = apiEndpoint
+        deepLApi.apiClient.servers.first().URL = apiEndpoint
     }
 
     override fun translate(texts: List<String>, srcLang: String, dstLang: String): List<String> {
@@ -24,7 +24,10 @@ class DeepLTranslator(apiEndpoint: String, apiKey: String) : Translator {
         val ignoreTags = java.lang.String.join(",", IGNORE_ELEMENT_NAMES)
         val translations: Translations
         try {
-            translations = deepLApi.translate(texts, srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
+            translations = when (texts.size) {
+                1 -> deepLApi.translateText(texts.first(), srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
+                else -> deepLApi.translateTexts(texts, srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
+            }
         } catch (e: ApiException) {
             val message = String.format("%d error is thrown: %s", e.code, e.responseBody)
             throw DeepLTranslatorException(message, e)
