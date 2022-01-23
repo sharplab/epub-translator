@@ -21,8 +21,8 @@ jobs:
       - name: Build uber-jar with Gradle
         run: ./gradlew quarkusBuild -Dquarkus.package.type=uber-jar
 
-      - name: Build native image
-        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true
+#      - name: Build native image
+#        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true
 
       - name: Create release
         id: create_release
@@ -45,12 +45,12 @@ jobs:
           asset_name: epub-translator-runner.jar
           asset_content_type: application/java-archive
 
-      - name: Upload release executable asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/epub-translator-runner
-          asset_name: epub-translator-runner
-          asset_content_type: application/octet-stream
+#      - name: Upload release executable asset
+#        uses: actions/upload-release-asset@v1
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        with:
+#          upload_url: ${{ steps.create_release.outputs.upload_url }}
+#          asset_path: ./build/epub-translator-runner
+#          asset_name: epub-translator-runner
+#          asset_content_type: application/octet-stream
