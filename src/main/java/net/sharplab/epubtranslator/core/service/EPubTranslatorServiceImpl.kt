@@ -251,7 +251,7 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
          * 一つの翻訳リクエストチャンクに含めることが可能な最大文字数
          */
         @Suppress("SpellCheckingInspection")
-        private const val MAX_REQUESTABLE_TEXT_LENGTH = 3000
+        private const val MAX_REQUESTABLE_TEXT_LENGTH = 1000
         /**
          * インライン要素のタグリスト
          */
