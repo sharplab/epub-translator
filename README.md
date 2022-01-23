@@ -31,6 +31,7 @@ The application can be packaged using following command:
 
 It produces the `epub-translator-runner.jar` file in the `build` directory.
 
+<!-- native build is temporary disabled
 ### Creating a native executable
 
 You can also create a native executable in this way:
@@ -44,6 +45,7 @@ Or, if you don't have GraalVM installed, you can run the native executable build
 ```
 
 It produces the `epub-translator-runner` file in the `build` directory.
+-->
 
 ## Configuration
 
@@ -70,9 +72,11 @@ java -jar epub-translator-runner.jar --src <path to source epub file> [--dst <pa
 [--srcLang <source language>] [--dstLang <destination language>]
 ```
 
+<!--
 executable
 
 ```
 ./epub-translator-runner --src <path to source epub file> [--dst <path to destination epub file>] \
 [--srcLang <source language>] [--dstLang <destination language>]
 ```
+-->
