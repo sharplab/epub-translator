@@ -1,7 +1,7 @@
 buildscript {
     ext.quarkusVersion= '2.6.3.Final'
     ext.kotlinVersion= '1.6.10'
-    ext.deepl4jVersion = 'split-translate-api-SNAPSHOT'
+    ext.deepl4jVersion = '0.1.1.RELEASE'
 }
 
 plugins {
