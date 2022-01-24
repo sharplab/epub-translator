@@ -62,14 +62,6 @@ ePubTranslator:
     source: en        # default source language
     destination: ja   # default destination language
 
-quarkus:
-  datasource:
-    db-kind: h2
-    jdbc:
-      url: jdbc:h2:~/.epub-translator/epub-translator
-  hibernate-orm:
-    database:
-      generation: update
 ```
 
 ## Execution

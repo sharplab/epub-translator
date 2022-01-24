@@ -1,0 +1,8 @@
+quarkus:
+  datasource:
+    db-kind: h2
+    jdbc:
+      url: jdbc:h2:~/.epub-translator/epub-translator
+  hibernate-orm:
+    database:
+      generation: update
