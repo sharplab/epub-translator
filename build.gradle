@@ -1,7 +1,7 @@
 buildscript {
     ext.quarkusVersion= '2.13.0.Final'
     ext.kotlinVersion= '1.6.21'
-    ext.deepl4jVersion = '0.1.2.RELEASE'
+    ext.deeplJavaVersion = '0.2.0'
 }
 
 plugins {
@@ -30,7 +30,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-hibernate-orm-panache-kotlin'
     implementation 'io.quarkus:quarkus-rest-client-jackson'
 
-    implementation "com.github.sharplab:deepl4j:$deepl4jVersion"
+    implementation "com.deepl.api:deepl-java:$deeplJavaVersion"
 
     testImplementation 'io.quarkus:quarkus-junit5'
 }

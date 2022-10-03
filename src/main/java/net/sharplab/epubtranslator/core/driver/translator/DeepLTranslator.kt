@@ -1,38 +1,36 @@
 package net.sharplab.epubtranslator.core.driver.translator
 
-import net.sharplab.deepl4j.DeepLApi
-import net.sharplab.deepl4j.DeepLApiFactory
-import net.sharplab.deepl4j.client.ApiException
-import net.sharplab.deepl4j.model.Translations
+import com.deepl.api.DeepLException
+import com.deepl.api.TextResult
+import com.deepl.api.TextTranslationOptions
+import com.deepl.api.TranslatorOptions
 import net.sharplab.epubtranslator.core.service.EPubTranslatorServiceImpl
-import javax.ws.rs.WebApplicationException
 
 class DeepLTranslator(apiEndpoint: String, apiKey: String) : Translator {
 
-    private val deepLApi : DeepLApi;
+    private val deepLApi : com.deepl.api.Translator;
 
     init {
-        deepLApi = DeepLApiFactory().create(apiKey)
-        deepLApi.apiClient.servers.first().URL = apiEndpoint
+        val translatorOptions = TranslatorOptions()
+        translatorOptions.serverUrl = apiEndpoint
+        deepLApi = com.deepl.api.Translator(apiKey,translatorOptions)
     }
 
     override fun translate(texts: List<String>, srcLang: String, dstLang: String): List<String> {
         if (texts.isEmpty()) {
             return emptyList()
         }
-        val nonSplittingTags = java.lang.String.join(",", EPubTranslatorServiceImpl.INLINE_ELEMENT_NAMES)
-        val ignoreTags = java.lang.String.join(",", IGNORE_ELEMENT_NAMES)
-        val translations: Translations
+        val translations: List<TextResult>
         try {
-            translations = when (texts.size) {
-                1 -> deepLApi.translateText(texts.first(), srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
-                else -> deepLApi.translateTexts(texts, srcLang, dstLang, null, null, null, null, "xml", nonSplittingTags, null, null, ignoreTags)
-            }
-        } catch (e: ApiException) {
-            val message = String.format("%d error is thrown: %s", e.code, e.responseBody)
-            throw DeepLTranslatorException(message, e)
+            val textTranslatorOptions = TextTranslationOptions()
+            textTranslatorOptions.nonSplittingTags = EPubTranslatorServiceImpl.INLINE_ELEMENT_NAMES
+            textTranslatorOptions.ignoreTags = IGNORE_ELEMENT_NAMES
+            textTranslatorOptions.tagHandling = "xml"
+            translations = deepLApi.translateText(texts, srcLang, dstLang, textTranslatorOptions)
+        } catch (e: DeepLException) {
+            throw DeepLTranslatorException("DeepL error is thrown", e)
         }
-        return translations.translations.map{ it.text }
+        return translations.map{ it.text }
     }
 
     companion object {

@@ -1,6 +1,5 @@
 package net.sharplab.epubtranslator.core.service
 
-import net.sharplab.deepl4j.client.ApiException
 import net.sharplab.epubtranslator.core.driver.translator.Translator
 import net.sharplab.epubtranslator.core.model.EPubChapter
 import net.sharplab.epubtranslator.core.model.EPubContentFile
@@ -144,7 +143,7 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
      * @return 翻訳除外ノードの場合、true
      */
     private fun isExcludedNode(node: Node): Boolean {
-        return EXCLUDED_ELEMENT_NAMES.contains(node.nodeName) || isTranslationTargetNode(node) && lookupNode(node, Predicate { isExcludedNode(it) })
+        return EXCLUDED_ELEMENT_NAMES.contains(node.nodeName) || isTranslationTargetNode(node) && lookupNode(node) { isExcludedNode(it) }
     }
 
     /**
