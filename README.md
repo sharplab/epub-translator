@@ -56,7 +56,7 @@ place application.yml to `<epub-translator working directory>/config/application
 ```
 ePubTranslator:
   deepL:
-    apiEndpoint: https://api.deepl.com/v2/ # If you subscribe free API plan, use "https://api-free.deepl.com/v2/" instead.
+    apiEndpoint: https://api.deepl.com # If you subscribe free API plan, use "https://api-free.deepl.com" instead.
     apiKey: <put your api key here>
   language:
     source: en        # default source language
