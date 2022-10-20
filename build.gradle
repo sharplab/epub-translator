@@ -1,7 +1,7 @@
 buildscript {
     ext.quarkusVersion= '2.13.0.Final'
     ext.kotlinVersion= '1.6.21'
-    ext.deeplJavaVersion = '0.2.0'
+    ext.deeplJavaVersion = '0.2.1'
 }
 
 plugins {
