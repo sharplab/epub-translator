@@ -1,6 +1,6 @@
 buildscript {
     ext.quarkusVersion= '2.15.1.Final'
-    ext.kotlinVersion= '1.6.21'
+    ext.kotlinVersion= '1.7.22'
     ext.deeplJavaVersion = '1.0.0'
 }
 
