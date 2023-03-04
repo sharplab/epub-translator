@@ -1,7 +1,15 @@
 buildscript {
+buildscript {
     ext.quarkusVersion= '2.6.3.Final'
     ext.kotlinVersion= '1.6.10'
     ext.deepl4jVersion = '0.1.2.RELEASE'
+
+    println("JAVA=${JavaVersion.current()}")
+    // https://docs.gradle.org/current/javadoc/org/gradle/api/JavaVersion.html
+    // Use .isJava11Compatible() if future java's are also acceptable, and .isJava11() for only Java11
+    if (!JavaVersion.current().isJava11Compatible()) {
+        throw new AssertionError("Current Java is '${JavaVersion.current()}' but expected Java 11")
+    }
 }
 
 plugins {
