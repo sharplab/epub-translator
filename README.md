@@ -81,3 +81,10 @@ executable
 [--srcLang <source language>] [--dstLang <destination language>]
 ```
 -->
+
+## Database and DeepL limited credits
+
+A database is kept of previous translations. This is especially useful if a translation fails during processing, to avoid spending credit on already translated content. 
+It also makes it possible to incrementally translate a book using limited credits, by running the translation again later when more credits are available
+
+The database is located at `~username/.epub-translator`.
