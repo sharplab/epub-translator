@@ -1,44 +1,55 @@
 package net.sharplab.epubtranslator.core.service
 
+import net.sharplab.epubtranslator.app.config.EpubGenerationConfig
+import net.sharplab.epubtranslator.core.driver.translator.DeepLTranslatorException
 import net.sharplab.epubtranslator.core.driver.translator.Translator
 import net.sharplab.epubtranslator.core.model.EPubChapter
 import net.sharplab.epubtranslator.core.model.EPubContentFile
 import net.sharplab.epubtranslator.core.model.EPubFile
 import net.sharplab.epubtranslator.core.util.XmlUtils.parseXmlStringToDocument
 import net.sharplab.epubtranslator.core.util.XmlUtils.parseXmlStringToDocumentFragment
+import net.sharplab.epubtranslator.core.util.logSubString
 import org.slf4j.LoggerFactory
 import org.w3c.dom.Document
 import org.w3c.dom.Node
 import org.w3c.dom.ls.DOMImplementationLS
 import java.nio.charset.StandardCharsets
-import java.util.function.Consumer
 import java.util.function.Predicate
 import javax.enterprise.context.Dependent
 
 @Dependent
-class EPubTranslatorServiceImpl(private val translator: Translator, private val translationMemoryService: TranslationMemoryService) : EPubTranslatorService {
+class EPubTranslatorServiceImpl(
+    private val translator: Translator,
+    private val translationMemoryService: TranslationMemoryService,
+    private val epubGenerationConfig: EpubGenerationConfig,
+) : EPubTranslatorService {
 
     private val logger = LoggerFactory.getLogger(EPubTranslatorServiceImpl::class.java)
 
-    override fun translate(ePubFile: EPubFile, srcLang: String, dstLang: String): EPubFile {
+    private var lastTranslatedUsed = LogTranslationSource()
+    private var translationFailure: TranslationFailure? = null
+
+    override fun translate(ePubFile: EPubFile, srcLang: String, dstLang: String): Pair<EPubFile, TranslationFailure?> {
         val contentFiles = ePubFile.contentFiles
         val translatedContentFiles = contentFiles.map { contentFile: EPubContentFile ->
             if (contentFile is EPubChapter) {
+                lastTranslatedUsed.clear()
                 val contents = contentFile.dataAsString
-                val translatedContents = translateEPubXhtmlString(contents, srcLang, dstLang)
-                val ePubChapter = EPubChapter(contentFile.name, translatedContents.toByteArray(StandardCharsets.UTF_8))
-                logger.info("{} is translated.", ePubChapter.name)
+                val contentFileName = contentFile.name
+                val translatedContents = translateEPubXhtmlString(contentFileName, contents, srcLang, dstLang)
+                val ePubChapter = EPubChapter(contentFileName, translatedContents.toByteArray(StandardCharsets.UTF_8))
+                logger.info("{} is {}", ePubChapter.name, lastTranslatedUsed.logTranslation(translationFailure))
                 return@map ePubChapter
             } else {
                 return@map contentFile
             }
         }
-        return EPubFile(translatedContentFiles)
+        return Pair(EPubFile(translatedContentFiles), translationFailure)
     }
 
-    fun translateEPubXhtmlString(xhtmlString: String, srcLang: String, dstLang: String): String {
+    fun translateEPubXhtmlString(contentFileName: String, xhtmlString: String, srcLang: String, dstLang: String): String {
         val document = parseXmlStringToDocument(xhtmlString)
-        val translatedDocument = translateEPubXhtmlDocument(document, srcLang, dstLang)
+        val translatedDocument: Document = translateEPubXhtmlDocument(contentFileName, document, srcLang, dstLang)
         val domImplementation = translatedDocument.implementation as DOMImplementationLS
         val lsSerializer = domImplementation.createLSSerializer()
         lsSerializer.domConfig.setParameter("xml-declaration", true)
@@ -47,12 +58,27 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
         return lsSerializer.writeToString(translatedDocument)
     }
 
-    private fun translateEPubXhtmlDocument(document: Document, srcLang: String, dstLang: String): Document {
+    /**
+     * Translates document, first by using database, then by translating remaining by DeepL.
+     * If DeepL fails we record the exception and continue, so we can produce and output
+     * document with what we got until failure.
+     */
+    private fun translateEPubXhtmlDocument(contentFileName: String, document: Document, srcLang: String, dstLang: String): Document {
         preProcessNode(document)
         var translationRequests = generateTranslationRequests(document)
         translationRequests = translateWithTranslationMemory(translationRequests, srcLang, dstLang)
         val translationRequestChunks = formTranslationRequestChunks(translationRequests)
-        translateWithDeepL(translationRequestChunks, srcLang, dstLang)
+        try {
+            translateWithDeepL(translationRequestChunks, srcLang, dstLang)
+        } catch (e: Exception) {
+            // only record first exception
+            if (translationFailure == null)
+                translationFailure = TranslationFailure(
+                    exception = e,
+                    reason = e.cause?.message ?: e.message,
+                    contentFileName = contentFileName,
+                )
+        }
         return document
     }
 
@@ -64,10 +90,14 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
         val list = ArrayList<TranslationRequest>()
         translationRequests.forEach {
             val translatedString = translationMemoryService.load(it.sourceXmlString, srcLang, dstLang)
-            if(translatedString == null){
+            if (translatedString == null) {
                 list.add(it)
-            }
-            else{
+            } else {
+                // Avoid blank lines because otherwise we think files have been translated where it's just the blanks that were found in DB.
+                if (translatedString.isNotBlank()) {
+                    if (doLog) logger.info("load: {}, translated: {}", it.sourceXmlString.logSubString(), translatedString.logSubString())
+                    lastTranslatedUsed.withDatabase()
+                }
                 replaceWithTranslatedString(it, translatedString)
             }
         }
@@ -175,32 +205,49 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
      *
      * @param translationRequestChunks 翻訳リクエストチャンクのリスト
      */
+    @Throws(DeepLTranslatorException::class) // For documentation, this is what gets thrown on Quota Exceeded, in which case it wraps a QuotaExceededException
     private fun translateWithDeepL(translationRequestChunks: List<TranslationRequestChunk>, srcLang: String, dstLang: String) {
-        translationRequestChunks.forEach(Consumer { translationRequestChunk: TranslationRequestChunk ->
-            val translationRequests = translationRequestChunk.translationRequests
-            val translationResponse: List<String> =
-                translator.translate(translationRequests.map(TranslationRequest::sourceXmlString), srcLang, dstLang)
-            for (i in translationRequests.indices) {
-                val translationRequest = translationRequests[i]
-                val translatedString = translationResponse[i]
-                translationMemoryService.save(translationRequest.sourceXmlString, translatedString, srcLang, dstLang)
-                replaceWithTranslatedString(translationRequest, translatedString)
+        translationRequestChunks
+            .filter { it.translationRequests.isNotEmpty() } // filter empty away to avoid incorrectly recording lastTranslatedUsed.withDeepL()
+            .forEach { translationRequestChunk: TranslationRequestChunk ->
+                val translationRequests = translationRequestChunk.translationRequests
+                val translationResponse: List<String> =
+                    translator.translate(translationRequests.map(TranslationRequest::sourceXmlString), srcLang, dstLang)
+                lastTranslatedUsed.withDeepL()
+                for (i in translationRequests.indices) {
+                    val translationRequest = translationRequests[i]
+                    val translatedString = translationResponse[i]
+                    if (doLog) logger.info("Saving translation in DB: ${translatedString.logSubString()}")
+                    translationMemoryService.save(translationRequest.sourceXmlString, translatedString, srcLang, dstLang)
+                    replaceWithTranslatedString(translationRequest, translatedString)
+                }
             }
-        })
     }
 
-    private fun replaceWithTranslatedString(translationRequest: TranslationRequest, translatedString: String){
-        val document = translationRequest.document
-        val firstNode = translationRequest.target.first()
-        val documentFragment = parseXmlStringToDocumentFragment(document, translatedString)
-        val translatedTextContainerDiv = document.createElement("div")
-        translatedTextContainerDiv.appendChild(documentFragment)
-        firstNode.parentNode.insertBefore(translatedTextContainerDiv, firstNode)
-        val originalTextContainerDiv = document.createElement("div")
-        translatedTextContainerDiv.parentNode.insertBefore(originalTextContainerDiv, translatedTextContainerDiv)
-        val targetNodes = translationRequest.target
-        for (targetNode in targetNodes) {
-            originalTextContainerDiv.appendChild(targetNode)
+    private fun replaceWithTranslatedString(translationRequest: TranslationRequest, translatedString: String) {
+        val translatedStringWithPostfix =
+            if (epubGenerationConfig.applyPrefix) {
+                epubGenerationConfig.outputTranslatedPrefix + translatedString
+            } else translatedString
+
+        // No need to add double-blank lines. Also in some books it makes strange long empty paragraphs in the
+        // start and end of the book, as the source for some reason is decoded to blank space.
+        if (translatedString.isNotBlank()) {
+            val document = translationRequest.document
+            val firstNode = translationRequest.target.first()
+            val documentFragment = parseXmlStringToDocumentFragment(document, translatedStringWithPostfix)
+
+            translatedString.isNotBlank()
+            val translatedTextContainerDiv = document.createElement("div")
+            translatedTextContainerDiv.appendChild(documentFragment)
+            firstNode.parentNode.insertBefore(translatedTextContainerDiv, firstNode)
+            val originalTextContainerDiv = document.createElement("div")
+            translatedTextContainerDiv.parentNode.insertBefore(originalTextContainerDiv, translatedTextContainerDiv)
+
+            val targetNodes = translationRequest.target
+            for (targetNode in targetNodes) {
+                originalTextContainerDiv.appendChild(targetNode)
+            }
         }
     }
 
@@ -259,6 +306,35 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
          * 翻訳除外要素のリスト
          */
         private val EXCLUDED_ELEMENT_NAMES = listOf("head", "pre", "tt")
+
+        private const val doLog = false
+
+        class LogTranslationSource {
+            private var lastTranslatedUsingInMemory: Boolean = false
+            private var lastTranslatedUsingDeepL: Boolean = false
+            fun clear() {
+                lastTranslatedUsingInMemory = false
+                lastTranslatedUsingDeepL = false
+            }
+
+            fun withDeepL() {
+                lastTranslatedUsingDeepL = true
+            }
+
+            fun withDatabase() {
+                lastTranslatedUsingInMemory = true
+            }
+
+            fun logTranslation(translationFailure: TranslationFailure?): String {
+                val translated = translationFailure?.let { "partially translated" } ?: "translated"
+                val postFix = translationFailure?.let { " with DeepL failures" } ?: ""
+
+                return if (lastTranslatedUsingDeepL && lastTranslatedUsingInMemory) "$translated using DeepL and existing database$postFix"
+                else if (lastTranslatedUsingDeepL) "$translated using DeepL$postFix"
+                else if (lastTranslatedUsingInMemory) "$translated using existing database$postFix"
+                else "was not translated$postFix"
+            }
+        }
     }
 
 }
