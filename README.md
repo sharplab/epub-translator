@@ -20,6 +20,15 @@ If you want to learn more about Quarkus, please visit its website: https://quark
 - GraalVM (If you want to build a native image directly)
 - Docker or Podman (If you want to build a native image in a container)
 
+### Building
+
+The application can be built and executed directly from the source dir using
+
+```
+./gradlew build
+java -jar build\quarkus-app\quarkus-run.jar --src my.epub
+```
+
 ### Creating an uber-jar
 
 
@@ -88,3 +97,11 @@ A database is kept of previous translations. This is especially useful if a tran
 It also makes it possible to incrementally translate a book using limited credits, by running the translation again later when more credits are available
 
 The database is located at `~username/.epub-translator`.
+
+`epub-translator` can count the characters in the file using `--count`. 
+This can be used to estimate the cost in DeepL credits before executing the translation. 
+
+## Fixing bad output files
+
+If the translated epub is not readable by your e-reader, it may be fixable by [Calibre](https://calibre-ebook.com/).
+Calibre has an eBook conversion tool, and converting the output book from epub to epub tends to fix the problems.  
