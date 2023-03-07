@@ -29,6 +29,26 @@ class EPubTranslatorServiceImpl(
     private var lastTranslatedUsed = LogTranslationSource()
     private var translationFailure: TranslationFailure? = null
 
+    /**
+     * Computes number of characters (including xml-formatting chars) in each content-file of the epub.
+     * @return map of filename -> character count
+     */
+    override fun countCharacters(ePubFile: EPubFile): Map<String, Int> {
+        return ePubFile.contentFiles
+            .filterIsInstance<EPubChapter>()
+            .associate { contentFile: EPubChapter ->
+                val contents = contentFile.dataAsString
+                val contentFileName = contentFile.name
+
+                val document = parseXmlStringToDocument(contents)
+                val translationRequests = generateTranslationRequests(document)
+                val characters = translationRequests.sumOf { it.sourceXmlString.length }
+
+                logger.info("File {} contains # characters: {} ", contentFileName, characters)
+                Pair(contentFileName, characters)
+            }
+    }
+
     override fun translate(ePubFile: EPubFile, srcLang: String, dstLang: String): Pair<EPubFile, TranslationFailure?> {
         val contentFiles = ePubFile.contentFiles
         val translatedContentFiles = contentFiles.map { contentFile: EPubContentFile ->
@@ -298,10 +318,13 @@ class EPubTranslatorServiceImpl(
          */
         @Suppress("SpellCheckingInspection")
         private const val MAX_REQUESTABLE_TEXT_LENGTH = 1000
+        // @formatter:off - disables IntelliJ autoformatting which might split this line
         /**
          * インライン要素のタグリスト
          */
         val INLINE_ELEMENT_NAMES = listOf("a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "dfn", "em", "i", "kbd", "mark", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "small", "span", "strong", "sub", "sup", "time", "u", "var", "wbr")
+        // @formatter:on
+
         /**
          * 翻訳除外要素のリスト
          */

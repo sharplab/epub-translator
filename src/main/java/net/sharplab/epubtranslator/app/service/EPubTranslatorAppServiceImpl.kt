@@ -12,6 +12,13 @@ class EPubTranslatorAppServiceImpl(private val ePubTranslatorService: EPubTransl
 
     private val logger = LoggerFactory.getLogger(EPubTranslatorAppServiceImpl::class.java)
 
+    override fun countCharacters(ePubTranslateParameters: EPubTranslateParameters) {
+        val ePubFile = ePubReader.read(ePubTranslateParameters.srcFile)
+        val countMap = ePubTranslatorService.countCharacters(ePubFile)
+        logger.info("Total characters ${countMap.values.sum()}")
+        logger.info("- Note that the total characters includes formatting tags which seem to not counted in DeepL usage limit.")
+    }
+
     override fun translateEPubFile(ePubTranslateParameters: EPubTranslateParameters) {
         val ePubFile = ePubReader.read(ePubTranslateParameters.srcFile)
         val (translatedEpub, failure) = ePubTranslatorService.translate(ePubFile, ePubTranslateParameters.srcLang, ePubTranslateParameters.dstLang)

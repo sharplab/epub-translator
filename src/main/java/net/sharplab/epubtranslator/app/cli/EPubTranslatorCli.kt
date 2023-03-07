@@ -7,6 +7,7 @@ import picocli.CommandLine
 import java.io.File
 import java.lang.IllegalArgumentException
 
+@Suppress("unused")
 @CommandLine.Command
 class EPubTranslatorCli(private val ePubTranslatorAppService: EPubTranslatorAppService, private val ePubTranslatorSetting: EPubTranslatorSetting) : Runnable {
     @CommandLine.Option(order = 0, names = ["--src"], description = ["source file"], required = true)
@@ -19,6 +20,8 @@ class EPubTranslatorCli(private val ePubTranslatorAppService: EPubTranslatorAppS
     private var dstLang: String? = null
     @CommandLine.Option(order = 9, names = ["--help", "-h"], description = ["print help"], usageHelp = true)
     private var help = false
+    @CommandLine.Option(order = 10, names = ["--count", "-c"], description = ["count number of characters instead of translating file"])
+    private var countCharacters = false
 
     override fun run() {
         val srcFile = src?: throw IllegalArgumentException("src must be provided")
@@ -26,7 +29,11 @@ class EPubTranslatorCli(private val ePubTranslatorAppService: EPubTranslatorAppS
         val resolvedDstLang = dstLang ?: ePubTranslatorSetting.defaultDstLang ?: throw IllegalArgumentException("dstLang must be provided")
         val resolvedDst = dst ?: constructDstFileFromSrcFile(srcFile, resolvedDstLang)
         val ePubTranslateParameters = EPubTranslateParameters(srcFile, resolvedDst, resolvedSrcLang, resolvedDstLang)
-        ePubTranslatorAppService.translateEPubFile(ePubTranslateParameters)
+        if (countCharacters) {
+            ePubTranslatorAppService.countCharacters(ePubTranslateParameters)
+        } else {
+            ePubTranslatorAppService.translateEPubFile(ePubTranslateParameters)
+        }
     }
 
     private fun constructDstFileFromSrcFile(src: File, dstLang: String): File {
