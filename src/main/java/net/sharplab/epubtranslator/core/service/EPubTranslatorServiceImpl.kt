@@ -252,7 +252,7 @@ class EPubTranslatorServiceImpl(
                 epubGenerationConfig.outputTranslatedPrefix + translatedString
             } else translatedString
 
-        if (doLogReplacements) logger.info("Replacing ${translationRequest.sourceXmlString} -> $translatedStringWithPostfix")
+        if (doLogReplacements) logger.info("Replacing '${translationRequest.sourceXmlString}' -> '$translatedStringWithPostfix'")
 
         // No need to add double-blank lines. Also in some books it makes strange long empty paragraphs in the
         // start and end of the book, as the source for some reason is decoded to blank space.
