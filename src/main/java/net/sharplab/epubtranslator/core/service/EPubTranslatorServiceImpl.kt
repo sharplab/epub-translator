@@ -113,11 +113,8 @@ class EPubTranslatorServiceImpl(
             if (translatedString == null) {
                 list.add(it)
             } else {
-                // Avoid blank lines because otherwise we think files have been translated where it's just the blanks that were found in DB.
-                if (translatedString.isNotBlank()) {
-                    if (doLog) logger.info("load: {}, translated: {}", it.sourceXmlString.logSubString(), translatedString.logSubString())
-                    lastTranslatedUsed.withDatabase()
-                }
+                if (doLog) logger.info("load: {}, translated: {}", it.sourceXmlString.logSubString(), translatedString.logSubString())
+                lastTranslatedUsed.withDatabase()
                 replaceWithTranslatedString(it, translatedString)
             }
         }
@@ -136,7 +133,7 @@ class EPubTranslatorServiceImpl(
         val wip = TranslationRequest(document, ArrayList())
         translationRequests.add(wip)
         walkToGenerateTranslationRequests(document, HashSet(), translationRequests)
-        return translationRequests.filter { it.sourceXmlString.trim(' ').isNotEmpty() }
+        return translationRequests.filter { it.sourceXmlString.isNotBlank() }
     }
 
     /**
@@ -229,7 +226,6 @@ class EPubTranslatorServiceImpl(
     @Throws(DeepLTranslatorException::class) // For documentation, this is what gets thrown on Quota Exceeded, in which case it wraps a QuotaExceededException
     private fun translateWithDeepL(translationRequestChunks: List<TranslationRequestChunk>, srcLang: String, dstLang: String) {
         translationRequestChunks
-            .filter { it.translationRequests.isNotEmpty() } // filter empty away to avoid incorrectly recording lastTranslatedUsed.withDeepL()
             .forEach { translationRequestChunk: TranslationRequestChunk ->
                 val translationRequests = translationRequestChunk.translationRequests
                 val translationResponse: List<String> =
@@ -253,23 +249,19 @@ class EPubTranslatorServiceImpl(
 
         if (doLogReplacements) logger.info("Replacing '${translationRequest.sourceXmlString}' -> '$translatedStringWithPostfix'")
 
-        // No need to add double-blank lines. Also in some books it makes strange long empty paragraphs in the
-        // start and end of the book, as the source for some reason is decoded to blank space.
-        if (translatedString.isNotBlank()) {
-            val document = translationRequest.document
-            val firstNode = translationRequest.target.first()
-            val documentFragment = xmlParser.parseStringToDocumentFragment(document, translatedStringWithPostfix)
+        val document = translationRequest.document
+        val firstNode = translationRequest.target.first()
+        val documentFragment = xmlParser.parseStringToDocumentFragment(document, translatedStringWithPostfix)
 
-            val translatedTextContainerDiv = document.createElement("div")
-            translatedTextContainerDiv.appendChild(documentFragment)
-            firstNode.parentNode.insertBefore(translatedTextContainerDiv, firstNode)
-            val originalTextContainerDiv = document.createElement("div")
-            translatedTextContainerDiv.parentNode.insertBefore(originalTextContainerDiv, translatedTextContainerDiv)
+        val translatedTextContainerDiv = document.createElement("div")
+        translatedTextContainerDiv.appendChild(documentFragment)
+        firstNode.parentNode.insertBefore(translatedTextContainerDiv, firstNode)
+        val originalTextContainerDiv = document.createElement("div")
+        translatedTextContainerDiv.parentNode.insertBefore(originalTextContainerDiv, translatedTextContainerDiv)
 
-            val targetNodes = translationRequest.target
-            for (targetNode in targetNodes) {
-                originalTextContainerDiv.appendChild(targetNode)
-            }
+        val targetNodes = translationRequest.target
+        for (targetNode in targetNodes) {
+            originalTextContainerDiv.appendChild(targetNode)
         }
     }
 
