@@ -58,7 +58,7 @@ class EPubTranslatorServiceImpl(
                 val contentFileName = contentFile.name
                 val translatedContents = translateEPubXhtmlString(contentFileName, contents, srcLang, dstLang)
                 val ePubChapter = EPubChapter(contentFileName, translatedContents.toByteArray(StandardCharsets.UTF_8))
-                logger.info("{} is {}", ePubChapter.name, lastTranslatedUsed.logTranslation())
+                logger.info("{}", lastTranslatedUsed.logTranslation(ePubChapter.name))
                 return@map ePubChapter
             } else {
                 return@map contentFile
@@ -85,6 +85,7 @@ class EPubTranslatorServiceImpl(
      */
     private fun translateEPubXhtmlDocument(contentFileName: String, document: Document, srcLang: String, dstLang: String): Document {
         var translationRequests = generateTranslationRequests(document)
+        lastTranslatedUsed.withSourceTexts(translationRequests)
         translationRequests = translateWithTranslationMemory(translationRequests, srcLang, dstLang)
         val translationRequestChunks = formTranslationRequestChunks(translationRequests)
         try {
@@ -114,7 +115,7 @@ class EPubTranslatorServiceImpl(
                 list.add(it)
             } else {
                 if (doLog) logger.info("load: {}, translated: {}", it.sourceXmlString.logSubString(), translatedString.logSubString())
-                lastTranslatedUsed.withDatabase()
+                lastTranslatedUsed.withDatabase(it)
                 replaceWithTranslatedString(it, translatedString)
             }
         }
@@ -230,7 +231,7 @@ class EPubTranslatorServiceImpl(
                 val translationRequests = translationRequestChunk.translationRequests
                 val translationResponse: List<String> =
                     translator.translate(translationRequests.map(TranslationRequest::sourceXmlString), srcLang, dstLang)
-                lastTranslatedUsed.withDeepL()
+                lastTranslatedUsed.withDeepL(translationRequests)
                 for (i in translationRequests.indices) {
                     val translationRequest = translationRequests[i]
                     val translatedString = translationResponse[i]
@@ -312,27 +313,39 @@ class EPubTranslatorServiceImpl(
         private const val doLogReplacements = doLog
 
         class LogTranslationSource {
+            private var charCountSource: Int = 0
+            private var charCountTranslatedDeepL: Int = 0
+            private var charCountTranslatedDatabase: Int = 0
             private var translatedUsingInMemory: Boolean = false
             private var translatedUsingDeepL: Boolean = false
             private var deeplException: Exception? = null
             private var isFileEmpty: Boolean = false
 
             fun clear() {
+                charCountTranslatedDeepL = 0
+                charCountTranslatedDatabase = 0
+                charCountSource = 0
                 translatedUsingInMemory = false
                 translatedUsingDeepL = false
                 deeplException = null
                 isFileEmpty = false
             }
 
+            fun withSourceTexts(translationRequests: List<TranslationRequest>) {
+                charCountSource = translationRequests.sumOf { it.sourceXmlString.length }
+            }
+
             fun withDeepLFailure(exception: java.lang.Exception) {
                 deeplException = exception
             }
 
-            fun withDeepL() {
+            fun withDeepL(translatedSourceTexts: List<TranslationRequest>) {
                 translatedUsingDeepL = true
+                charCountTranslatedDeepL += translatedSourceTexts.sumOf { it.sourceXmlString.length }
             }
 
-            fun withDatabase() {
+            fun withDatabase(translatedSourceTexts: TranslationRequest) {
+                charCountTranslatedDatabase += translatedSourceTexts.sourceXmlString.length
                 translatedUsingInMemory = true
             }
 
@@ -340,15 +353,16 @@ class EPubTranslatorServiceImpl(
                 isFileEmpty = true
             }
 
-            fun logTranslation(): String {
-                val translated = deeplException?.let { "partially translated" } ?: "translated"
+            fun logTranslation(filename: String): String {
+                val totalTranslated = charCountTranslatedDeepL + charCountTranslatedDatabase
+                val translated = deeplException?.let { "partially translated with $totalTranslated/$charCountSource chars" } ?: "translated with $charCountSource chars"
                 val postFix = deeplException?.let { " but with DeepL failures" } ?: ""
 
-                return if (translatedUsingDeepL && translatedUsingInMemory) "$translated using DeepL and existing database$postFix"
-                else if (translatedUsingDeepL) "$translated using DeepL$postFix"
-                else if (translatedUsingInMemory) "$translated using existing database$postFix"
-                else if (isFileEmpty) "Nothing to translate"
-                else "was not translated${deeplException?.let { " due to DeepL failures" } ?: ""}" // DeepL's error should be the only reason for this.
+                return if (translatedUsingDeepL && translatedUsingInMemory) "$filename is $translated using DeepL and existing database$postFix"
+                else if (translatedUsingDeepL) "$filename is $translated using DeepL$postFix"
+                else if (translatedUsingInMemory) "$filename is $translated using existing database$postFix"
+                else if (isFileEmpty) "$filename: Nothing to translate"
+                else "$filename was not translated with $charCountSource chars${deeplException?.let { " due to DeepL failures" } ?: ""}" // DeepL's error should be the only reason for this.
             }
         }
     }
