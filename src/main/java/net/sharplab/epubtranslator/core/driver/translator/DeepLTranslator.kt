@@ -31,6 +31,7 @@ class DeepLTranslator(apiEndpoint: String, apiKey: String) : Translator {
             translations = deepLApi.translateText(texts, srcLang, dstLang, textTranslatorOptions)
             if (doLog) logger.info("DeepL Translated $texts -> $translations")
         } catch (e: DeepLException) {
+            if (doLog) logger.info("DeepL failed with $e on input $texts")
             throw DeepLTranslatorException("DeepL error is thrown", e)
         }
         return translations.map { it.text }

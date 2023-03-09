@@ -28,7 +28,7 @@ class EPubTranslatorAppServiceImpl(private val ePubTranslatorService: EPubTransl
                 val orgDst = ePubTranslateParameters.dstFile
                 logger.warn("DeepL failed with reason: ${it.reason}")
                 val newDstFile = File(orgDst.parentFile, "${orgDst.nameWithoutExtension}-failed-${it.contentFileName.filename}.${orgDst.extension}")
-                logger.warn("newDstFile $newDstFile")
+                logger.info("Written to output file: $newDstFile")
                 newDstFile
             } ?: ePubTranslateParameters.dstFile
 
