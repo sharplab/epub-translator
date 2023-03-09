@@ -84,7 +84,6 @@ class EPubTranslatorServiceImpl(
      * document with what we got until failure.
      */
     private fun translateEPubXhtmlDocument(contentFileName: String, document: Document, srcLang: String, dstLang: String): Document {
-        preProcessNode(document)
         var translationRequests = generateTranslationRequests(document)
         translationRequests = translateWithTranslationMemory(translationRequests, srcLang, dstLang)
         val translationRequestChunks = formTranslationRequestChunks(translationRequests)
@@ -274,18 +273,6 @@ class EPubTranslatorServiceImpl(
         }
     }
 
-    private fun preProcessNode(node: Node) {
-        val children = node.childNodes
-        for (i in 0 until children.length) {
-            val child = children.item(i)
-            if (isEmptyElement(child)) {
-                child.appendChild(node.ownerDocument.createComment("place holder"))
-            } else {
-                preProcessNode(child)
-            }
-        }
-    }
-
     /**
      * 翻訳対象ノードか判定する
      *
@@ -294,10 +281,6 @@ class EPubTranslatorServiceImpl(
      */
     private fun isTranslationTargetNode(node: Node): Boolean {
         return node.nodeType == Node.TEXT_NODE || node.nodeType == Node.ELEMENT_NODE && INLINE_ELEMENT_NAMES.contains(node.nodeName)
-    }
-
-    private fun isEmptyElement(node: Node): Boolean {
-        return node.nodeType == Node.ELEMENT_NODE && !node.hasChildNodes()
     }
 
     private fun lookupNode(node: Node, condition: Predicate<Node>): Boolean {
