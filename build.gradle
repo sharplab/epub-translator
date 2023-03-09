@@ -40,6 +40,12 @@ dependencies {
     implementation "com.deepl.api:deepl-java:$deeplJavaVersion"
 
     testImplementation 'io.quarkus:quarkus-junit5'
+    // https://mockk.io/
+    // https://mvnrepository.com/artifact/io.mockk/mockk
+    testImplementation("io.mockk:mockk:1.13.4")
+    // https://github.com/quarkiverse/quarkus-mockk
+    // https://mvnrepository.com/artifact/io.quarkiverse.mockk/quarkus-junit5-mockk
+    testImplementation 'io.quarkiverse.mockk:quarkus-junit5-mockk:1.1.1'
 }
 
 group 'net.sharplab.epubtranslator'
