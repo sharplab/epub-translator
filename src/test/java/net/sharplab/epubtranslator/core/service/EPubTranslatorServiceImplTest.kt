@@ -3,6 +3,7 @@ package net.sharplab.epubtranslator.core.service
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import io.quarkus.test.junit.QuarkusTest
 import net.sharplab.epubtranslator.app.config.EpubGenerationConfig
 import net.sharplab.epubtranslator.core.driver.epub.EPubReader
@@ -39,7 +40,11 @@ internal class EPubTranslatorServiceImplTest {
         every { load(any(), any(), any()) } returns badReplacementString
     }
 
-    private val translator = mockk<Translator>() // Unused in our test, as all strings have DB-translations, hence no need to mock methods
+    private val translator = mockk<Translator> {
+        // This should be unused in our test, but for better test-behaviour its mocked, and then we verify its not called
+        val requestSlot = slot<List<String>>()
+        every { translate(capture(requestSlot), any(), any()) } answers { requestSlot.captured }
+    }
 
     private var epubGenerationConfigNoPrefix: EpubGenerationConfig = EpubGenerationConfig(false, "") // Test works, program fails
     private var epubGenerationConfigWithPrefix: EpubGenerationConfig = EpubGenerationConfig(true, "> ") // Test works, program fails
@@ -51,6 +56,7 @@ internal class EPubTranslatorServiceImplTest {
         val sut = EPubTranslatorServiceImpl(translator, translationMemoryService, epubGenerationConfigNoPrefix, XmlParserImpl())
         val ePubFile = ePubReader.read(testSrcFile)
         sut.translate(ePubFile, "en", "da", limitCredits = 0, abortOnError = false)
+        verifyNothingTranslated()
     }
 
     @Test
@@ -58,6 +64,7 @@ internal class EPubTranslatorServiceImplTest {
         val sut = EPubTranslatorServiceImpl(translator, translationMemoryService, epubGenerationConfigWithPrefix, XmlParserImpl())
         val ePubFile = ePubReader.read(testSrcFile)
         sut.translate(ePubFile, "en", "da", limitCredits = 0, abortOnError = false)
+        verifyNothingTranslated()
     }
 
     @Test
@@ -84,10 +91,16 @@ internal class EPubTranslatorServiceImplTest {
 
         val ePubFile = ePubReader.read(testSrcFile)
 
-        val exception = assertThrows<org.w3c.dom.ls.LSException> {
+        val exception = assertThrows<org.w3c.dom.ls.LSException>("Expect Document generation error") {
             sut.translate(ePubFile, "en", "da", limitCredits = 0, abortOnError = false)
         }
         println(exception)
         Assertions.assertEquals("java.lang.NullPointerException", exception.message) // Strangely enough, the cause is null
+
+        verifyNothingTranslated()
+    }
+
+    private fun verifyNothingTranslated() {
+        verify(exactly = 0) { translator.translate(any(), any(), any()) }
     }
 }
