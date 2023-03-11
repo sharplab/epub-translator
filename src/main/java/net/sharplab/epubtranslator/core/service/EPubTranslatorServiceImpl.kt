@@ -1,44 +1,78 @@
 package net.sharplab.epubtranslator.core.service
 
+import net.sharplab.epubtranslator.app.config.EpubGenerationConfig
+import net.sharplab.epubtranslator.core.driver.translator.DeepLTranslatorException
 import net.sharplab.epubtranslator.core.driver.translator.Translator
 import net.sharplab.epubtranslator.core.model.EPubChapter
 import net.sharplab.epubtranslator.core.model.EPubContentFile
 import net.sharplab.epubtranslator.core.model.EPubFile
-import net.sharplab.epubtranslator.core.util.XmlUtils.parseXmlStringToDocument
-import net.sharplab.epubtranslator.core.util.XmlUtils.parseXmlStringToDocumentFragment
+import net.sharplab.epubtranslator.core.util.XmlParser
+import net.sharplab.epubtranslator.core.util.logSubString
 import org.slf4j.LoggerFactory
 import org.w3c.dom.Document
 import org.w3c.dom.Node
 import org.w3c.dom.ls.DOMImplementationLS
 import java.nio.charset.StandardCharsets
-import java.util.function.Consumer
 import java.util.function.Predicate
 import javax.enterprise.context.Dependent
 
 @Dependent
-class EPubTranslatorServiceImpl(private val translator: Translator, private val translationMemoryService: TranslationMemoryService) : EPubTranslatorService {
+class EPubTranslatorServiceImpl(
+    private val translator: Translator,
+    private val translationMemoryService: TranslationMemoryService,
+    private val epubGenerationConfig: EpubGenerationConfig,
+    private val xmlParser: XmlParser,
+) : EPubTranslatorService {
 
     private val logger = LoggerFactory.getLogger(EPubTranslatorServiceImpl::class.java)
 
-    override fun translate(ePubFile: EPubFile, srcLang: String, dstLang: String): EPubFile {
+    private val translationState = TranslationState()
+    private val deeplLimitor = DeeplLimitor(translationState)
+    private var translationFailure: TranslationFailure? = null
+
+    /**
+     * Computes number of characters (including xml-formatting chars) in each content-file of the epub.
+     * @return map of filename -> character count
+     */
+    override fun countCharacters(ePubFile: EPubFile): Map<String, Int> {
+        return ePubFile.contentFiles
+            .filterIsInstance<EPubChapter>()
+            .associate { contentFile: EPubChapter ->
+                val contents = contentFile.dataAsString
+                val contentFileName = contentFile.name
+
+                val document = xmlParser.parse(contents)
+                val translationRequests = generateTranslationRequests(document)
+                val characters = translationRequests.sumOf { it.sourceXmlString.length }
+
+                logger.info("File {} contains # characters: {} ", contentFileName, characters)
+                Pair(contentFileName, characters)
+            }
+    }
+
+    override fun translate(ePubFile: EPubFile, srcLang: String, dstLang: String, limitCredits: Int, abortOnError: Boolean): Pair<EPubFile, TranslationFailure?> {
+        deeplLimitor.setLimitAndReset(limitCredits)
+        translationState.abortOnError = abortOnError
         val contentFiles = ePubFile.contentFiles
         val translatedContentFiles = contentFiles.map { contentFile: EPubContentFile ->
             if (contentFile is EPubChapter) {
+                translationState.clear()
                 val contents = contentFile.dataAsString
-                val translatedContents = translateEPubXhtmlString(contents, srcLang, dstLang)
-                val ePubChapter = EPubChapter(contentFile.name, translatedContents.toByteArray(StandardCharsets.UTF_8))
-                logger.info("{} is translated.", ePubChapter.name)
+                val contentFileName = contentFile.name
+                val translatedContents = translateEPubXhtmlString(contentFileName, contents, srcLang, dstLang)
+                val ePubChapter = EPubChapter(contentFileName, translatedContents.toByteArray(StandardCharsets.UTF_8))
+                logger.info("{}", translationState.logTranslation(ePubChapter.name))
                 return@map ePubChapter
             } else {
                 return@map contentFile
             }
         }
-        return EPubFile(translatedContentFiles)
+        return Pair(EPubFile(translatedContentFiles), translationFailure)
     }
 
-    fun translateEPubXhtmlString(xhtmlString: String, srcLang: String, dstLang: String): String {
-        val document = parseXmlStringToDocument(xhtmlString)
-        val translatedDocument = translateEPubXhtmlDocument(document, srcLang, dstLang)
+    private fun translateEPubXhtmlString(contentFileName: String, xhtmlString: String, srcLang: String, dstLang: String): String {
+        val document = xmlParser.parse(xhtmlString)
+        val translatedDocument: Document = translateEPubXhtmlDocument(contentFileName, document, srcLang, dstLang)
         val domImplementation = translatedDocument.implementation as DOMImplementationLS
         val lsSerializer = domImplementation.createLSSerializer()
         lsSerializer.domConfig.setParameter("xml-declaration", true)
@@ -47,12 +81,28 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
         return lsSerializer.writeToString(translatedDocument)
     }
 
-    private fun translateEPubXhtmlDocument(document: Document, srcLang: String, dstLang: String): Document {
-        preProcessNode(document)
+    /**
+     * Translates document, first by using database, then by translating remaining by DeepL.
+     * If DeepL fails we record the exception and continue, so we can produce and output
+     * document with what we got until failure.
+     */
+    private fun translateEPubXhtmlDocument(contentFileName: String, document: Document, srcLang: String, dstLang: String): Document {
         var translationRequests = generateTranslationRequests(document)
+        translationState.withSourceTexts(translationRequests)
         translationRequests = translateWithTranslationMemory(translationRequests, srcLang, dstLang)
         val translationRequestChunks = formTranslationRequestChunks(translationRequests)
-        translateWithDeepL(translationRequestChunks, srcLang, dstLang)
+        try {
+            translateWithDeepL(translationRequestChunks, srcLang, dstLang)
+        } catch (e: Exception) {
+            translationState.withDeepLFailure(e) // rethrows error if abortOnError enabled
+            // only record first exception
+            if (translationFailure == null)
+                translationFailure = TranslationFailure(
+                    exception = e,
+                    reason = e.cause?.message ?: e.message,
+                    contentFileName = contentFileName,
+                )
+        }
         return document
     }
 
@@ -64,13 +114,14 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
         val list = ArrayList<TranslationRequest>()
         translationRequests.forEach {
             val translatedString = translationMemoryService.load(it.sourceXmlString, srcLang, dstLang)
-            if(translatedString == null){
+            if (translatedString == null) {
                 list.add(it)
-            }
-            else{
+            } else {
+                translationState.withDatabase(it)
                 replaceWithTranslatedString(it, translatedString)
             }
         }
+        if (translationRequests.isEmpty()) translationState.emptyFile()
         return list
     }
 
@@ -85,7 +136,7 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
         val wip = TranslationRequest(document, ArrayList())
         translationRequests.add(wip)
         walkToGenerateTranslationRequests(document, HashSet(), translationRequests)
-        return translationRequests.filter { it.sourceXmlString.trim(' ').isNotEmpty() }
+        return translationRequests.filter { it.sourceXmlString.isNotBlank() }
     }
 
     /**
@@ -175,44 +226,46 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
      *
      * @param translationRequestChunks 翻訳リクエストチャンクのリスト
      */
+    @Throws(DeepLTranslatorException::class) // For documentation, this is what gets thrown on Quota Exceeded, in which case it wraps a QuotaExceededException
     private fun translateWithDeepL(translationRequestChunks: List<TranslationRequestChunk>, srcLang: String, dstLang: String) {
-        translationRequestChunks.forEach(Consumer { translationRequestChunk: TranslationRequestChunk ->
-            val translationRequests = translationRequestChunk.translationRequests
-            val translationResponse: List<String> =
-                translator.translate(translationRequests.map(TranslationRequest::sourceXmlString), srcLang, dstLang)
-            for (i in translationRequests.indices) {
-                val translationRequest = translationRequests[i]
-                val translatedString = translationResponse[i]
-                translationMemoryService.save(translationRequest.sourceXmlString, translatedString, srcLang, dstLang)
-                replaceWithTranslatedString(translationRequest, translatedString)
+        translationRequestChunks
+            .map { chunk -> chunk.translationRequests.filter { deeplLimitor.allowTranslateChars(it) } }
+            .filter { it.isNotEmpty() }
+            .forEach { translationRequests: List<TranslationRequest> ->
+                val translationResponse: List<String> =
+                    translator.translate(translationRequests.map(TranslationRequest::sourceXmlString), srcLang, dstLang)
+                translationState.withDeepL(translationRequests)
+                for (i in translationRequests.indices) {
+                    val translationRequest = translationRequests[i]
+                    val translatedString = translationResponse[i]
+                    if (doLog) logger.info("Saving translation in DB: ${translatedString.logSubString()}")
+                    translationMemoryService.save(translationRequest.sourceXmlString, translatedString, srcLang, dstLang)
+                    replaceWithTranslatedString(translationRequest, translatedString)
+                }
             }
-        })
     }
 
-    private fun replaceWithTranslatedString(translationRequest: TranslationRequest, translatedString: String){
+    private fun replaceWithTranslatedString(translationRequest: TranslationRequest, translatedString: String) {
+        val translatedStringWithPostfix =
+            if (epubGenerationConfig.applyPrefix) {
+                epubGenerationConfig.outputTranslatedPrefix + translatedString
+            } else translatedString
+
+        if (doLogReplacements) logger.info("Replacing '${translationRequest.sourceXmlString}' -> '$translatedStringWithPostfix'")
+
         val document = translationRequest.document
         val firstNode = translationRequest.target.first()
-        val documentFragment = parseXmlStringToDocumentFragment(document, translatedString)
+        val documentFragment = xmlParser.parseStringToDocumentFragment(document, translatedStringWithPostfix)
+
         val translatedTextContainerDiv = document.createElement("div")
         translatedTextContainerDiv.appendChild(documentFragment)
         firstNode.parentNode.insertBefore(translatedTextContainerDiv, firstNode)
         val originalTextContainerDiv = document.createElement("div")
         translatedTextContainerDiv.parentNode.insertBefore(originalTextContainerDiv, translatedTextContainerDiv)
+
         val targetNodes = translationRequest.target
         for (targetNode in targetNodes) {
             originalTextContainerDiv.appendChild(targetNode)
-        }
-    }
-
-    private fun preProcessNode(node: Node) {
-        val children = node.childNodes
-        for (i in 0 until children.length) {
-            val child = children.item(i)
-            if (isEmptyElement(child)) {
-                child.appendChild(node.ownerDocument.createComment("place holder"))
-            } else {
-                preProcessNode(child)
-            }
         }
     }
 
@@ -224,10 +277,6 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
      */
     private fun isTranslationTargetNode(node: Node): Boolean {
         return node.nodeType == Node.TEXT_NODE || node.nodeType == Node.ELEMENT_NODE && INLINE_ELEMENT_NAMES.contains(node.nodeName)
-    }
-
-    private fun isEmptyElement(node: Node): Boolean {
-        return node.nodeType == Node.ELEMENT_NODE && !node.hasChildNodes()
     }
 
     private fun lookupNode(node: Node, condition: Predicate<Node>): Boolean {
@@ -251,14 +300,107 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
          */
         @Suppress("SpellCheckingInspection")
         private const val MAX_REQUESTABLE_TEXT_LENGTH = 1000
+        // @formatter:off - disables IntelliJ autoformatting which might split this line
         /**
          * インライン要素のタグリスト
          */
         val INLINE_ELEMENT_NAMES = listOf("a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "dfn", "em", "i", "kbd", "mark", "q", "rp", "rt", "rtc", "ruby", "s", "samp", "small", "span", "strong", "sub", "sup", "time", "u", "var", "wbr")
+        // @formatter:on
+
         /**
          * 翻訳除外要素のリスト
          */
         private val EXCLUDED_ELEMENT_NAMES = listOf("head", "pre", "tt")
+
+        private const val doLog = false
+        private const val doLogReplacements = doLog
+
+        class DeeplLimitor(private val lastTranslatedUsed: TranslationState) {
+            private var charCountTranslated: Int = 0
+            private var limit: Int = 0
+                set(value) {
+                    field = value
+                    charCountTranslated = 0
+                }
+
+            fun setLimitAndReset(limit: Int) {
+                this.limit = limit
+            }
+
+            fun allowTranslateChars(translationRequest: TranslationRequest): Boolean {
+                val nextCount = charCountTranslated + translationRequest.sourceXmlString.length
+                return if (limit <= 0 || nextCount < limit) {
+                    charCountTranslated = nextCount
+                    true
+                } else {
+                    lastTranslatedUsed.withCreditBlock()
+                    false
+                }
+            }
+        }
+
+        class TranslationState {
+            var abortOnError: Boolean = false
+            private var charCountSource: Int = 0
+            private var charCountTranslatedDeepL: Int = 0
+            private var charCountTranslatedDatabase: Int = 0
+            private var translatedUsingInMemory: Boolean = false
+            private var translatedUsingDeepL: Boolean = false
+            private var translationLimitBlock: Boolean = false
+            private var deeplException: Exception? = null
+            private var isFileEmpty: Boolean = false
+
+            fun clear() {
+                charCountTranslatedDeepL = 0
+                charCountTranslatedDatabase = 0
+                charCountSource = 0
+                translatedUsingInMemory = false
+                translatedUsingDeepL = false
+                deeplException = null
+                isFileEmpty = false
+            }
+
+            fun withSourceTexts(translationRequests: List<TranslationRequest>) {
+                charCountSource = translationRequests.sumOf { it.sourceXmlString.length }
+            }
+
+            fun withDeepLFailure(exception: java.lang.Exception) {
+                deeplException = exception
+                if (abortOnError) throw exception
+            }
+
+            fun withDeepL(translatedSourceTexts: List<TranslationRequest>) {
+                translatedUsingDeepL = true
+                charCountTranslatedDeepL += translatedSourceTexts.sumOf { it.sourceXmlString.length }
+            }
+
+            fun withDatabase(translatedSourceTexts: TranslationRequest) {
+                charCountTranslatedDatabase += translatedSourceTexts.sourceXmlString.length
+                translatedUsingInMemory = true
+            }
+
+            fun withCreditBlock() {
+                translationLimitBlock = true
+            }
+
+            fun emptyFile() {
+                isFileEmpty = true
+            }
+
+            fun logTranslation(filename: String): String {
+                val totalTranslated = charCountTranslatedDeepL + charCountTranslatedDatabase
+                val isFullyTranslated = !translationLimitBlock && deeplException == null
+                val translated = if (!isFullyTranslated) "partially translated with $totalTranslated/$charCountSource chars" else "fully translated with $charCountSource chars"
+                val postFix = deeplException?.let { " but with DeepL failures" } ?: ""
+                val postFixCreditLimit = if (translationLimitBlock) ", DeepL Credit limit applied" else ""
+
+                return if (translatedUsingDeepL && translatedUsingInMemory) "$filename is $translated using DeepL and existing database$postFix$postFixCreditLimit"
+                else if (translatedUsingDeepL) "$filename is $translated using DeepL$postFix$postFixCreditLimit"
+                else if (translatedUsingInMemory) "$filename is $translated using existing database$postFix$postFixCreditLimit"
+                else if (isFileEmpty) "$filename: Nothing to translate"
+                else "$filename was not translated with $charCountSource chars${deeplException?.let { " due to DeepL failures" } ?: ""}$postFixCreditLimit"
+            }
+        }
     }
 
 }
