@@ -50,14 +50,14 @@ internal class EPubTranslatorServiceImplTest {
     fun parseEpub_ShouldSucceed_WhenUsingProdXmlParserImpl_And_noPrefix_OnProblematicTranslatedString() {
         val sut = EPubTranslatorServiceImpl(translator, translationMemoryService, epubGenerationConfigNoPrefix, XmlParserImpl())
         val ePubFile = ePubReader.read(testSrcFile)
-        sut.translate(ePubFile, "en", "da")
+        sut.translate(ePubFile, "en", "da", limitCredits = 0, abortOnError = false)
     }
 
     @Test
     fun parseEpub_ShouldSucceed_WhenUsingProdXmlParserImpl_And_prefix__OnProblematicTranslatedString() {
         val sut = EPubTranslatorServiceImpl(translator, translationMemoryService, epubGenerationConfigWithPrefix, XmlParserImpl())
         val ePubFile = ePubReader.read(testSrcFile)
-        sut.translate(ePubFile, "en", "da")
+        sut.translate(ePubFile, "en", "da", limitCredits = 0, abortOnError = false)
     }
 
     @Test
@@ -85,7 +85,7 @@ internal class EPubTranslatorServiceImplTest {
         val ePubFile = ePubReader.read(testSrcFile)
 
         val exception = assertThrows<org.w3c.dom.ls.LSException> {
-            sut.translate(ePubFile, "en", "da")
+            sut.translate(ePubFile, "en", "da", limitCredits = 0, abortOnError = false)
         }
         println(exception)
         Assertions.assertEquals("java.lang.NullPointerException", exception.message) // Strangely enough, the cause is null

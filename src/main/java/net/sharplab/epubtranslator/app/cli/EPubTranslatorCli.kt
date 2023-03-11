@@ -8,7 +8,7 @@ import java.io.File
 import java.lang.IllegalArgumentException
 
 @Suppress("unused")
-@CommandLine.Command
+@CommandLine.Command(sortOptions = false)
 class EPubTranslatorCli(private val ePubTranslatorAppService: EPubTranslatorAppService, private val ePubTranslatorSetting: EPubTranslatorSetting) : Runnable {
     @CommandLine.Option(order = 0, names = ["--src"], description = ["source file"], required = true)
     private var src: File? = null
@@ -18,17 +18,21 @@ class EPubTranslatorCli(private val ePubTranslatorAppService: EPubTranslatorAppS
     private var srcLang: String? = null
     @CommandLine.Option(order = 3, names = ["--dstLang"], description = ["destination language"])
     private var dstLang: String? = null
+    @CommandLine.Option(order = 4, names = ["--count", "-c"], description = ["count number of characters, skips translation"])
+    private var countCharacters = false
+    @CommandLine.Option(order = 5, names = ["--limit-credits", "-l"], description = ["limit the number of chars sent to DeepL, leaving the remaining untranslated"])
+    private var limitCredits: Int = 0
+    @CommandLine.Option(order = 6, names = ["--abort-on-error", "-a"], description = ["abort if a DeepL error is encountered"])
+    private var abortOnError = false
     @CommandLine.Option(order = 9, names = ["--help", "-h"], description = ["print help"], usageHelp = true)
     private var help = false
-    @CommandLine.Option(order = 10, names = ["--count", "-c"], description = ["count number of characters instead of translating file"])
-    private var countCharacters = false
 
     override fun run() {
         val srcFile = src?: throw IllegalArgumentException("src must be provided")
         val resolvedSrcLang = srcLang ?: ePubTranslatorSetting.defaultSrcLang ?: throw IllegalArgumentException("srcLang must be provided")
         val resolvedDstLang = dstLang ?: ePubTranslatorSetting.defaultDstLang ?: throw IllegalArgumentException("dstLang must be provided")
         val resolvedDst = dst ?: constructDstFileFromSrcFile(srcFile, resolvedDstLang)
-        val ePubTranslateParameters = EPubTranslateParameters(srcFile, resolvedDst, resolvedSrcLang, resolvedDstLang)
+        val ePubTranslateParameters = EPubTranslateParameters(srcFile, resolvedDst, resolvedSrcLang, resolvedDstLang, limitCredits, abortOnError)
         if (countCharacters) {
             ePubTranslatorAppService.countCharacters(ePubTranslateParameters)
         } else {

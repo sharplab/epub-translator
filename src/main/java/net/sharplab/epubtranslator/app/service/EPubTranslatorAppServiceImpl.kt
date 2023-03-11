@@ -21,7 +21,10 @@ class EPubTranslatorAppServiceImpl(private val ePubTranslatorService: EPubTransl
 
     override fun translateEPubFile(ePubTranslateParameters: EPubTranslateParameters) {
         val ePubFile = ePubReader.read(ePubTranslateParameters.srcFile)
-        val (translatedEpub, failure) = ePubTranslatorService.translate(ePubFile, ePubTranslateParameters.srcLang, ePubTranslateParameters.dstLang)
+        val (translatedEpub, failure) =
+            ePubTranslatorService.translate(
+                ePubFile, ePubTranslateParameters.srcLang, ePubTranslateParameters.dstLang, ePubTranslateParameters.limitCredits, ePubTranslateParameters.abortOnError
+            )
 
         val dstFile =
             failure?.let {
