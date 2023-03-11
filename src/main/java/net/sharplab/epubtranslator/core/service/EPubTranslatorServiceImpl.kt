@@ -117,7 +117,6 @@ class EPubTranslatorServiceImpl(
             if (translatedString == null) {
                 list.add(it)
             } else {
-                if (doLog) logger.info("load: {}, translated: {}", it.sourceXmlString.logSubString(), translatedString.logSubString())
                 translationState.withDatabase(it)
                 replaceWithTranslatedString(it, translatedString)
             }
@@ -230,9 +229,9 @@ class EPubTranslatorServiceImpl(
     @Throws(DeepLTranslatorException::class) // For documentation, this is what gets thrown on Quota Exceeded, in which case it wraps a QuotaExceededException
     private fun translateWithDeepL(translationRequestChunks: List<TranslationRequestChunk>, srcLang: String, dstLang: String) {
         translationRequestChunks
-            .forEach { translationRequestChunk: TranslationRequestChunk ->
-                val translationRequests = translationRequestChunk.translationRequests
-                    .filter { deeplLimitor.allowTranslateChars(it) }
+            .map { chunk -> chunk.translationRequests.filter { deeplLimitor.allowTranslateChars(it) } }
+            .filter { it.isNotEmpty() }
+            .forEach { translationRequests: List<TranslationRequest> ->
                 val translationResponse: List<String> =
                     translator.translate(translationRequests.map(TranslationRequest::sourceXmlString), srcLang, dstLang)
                 translationState.withDeepL(translationRequests)
