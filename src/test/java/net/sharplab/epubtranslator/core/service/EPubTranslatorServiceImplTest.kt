@@ -12,6 +12,7 @@ import net.sharplab.epubtranslator.core.util.XmlParser
 import net.sharplab.epubtranslator.core.util.XmlParserImpl
 import net.sharplab.epubtranslator.core.util.XmlUtils
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.w3c.dom.Document
@@ -23,6 +24,7 @@ internal class EPubTranslatorServiceImplTest {
 
     private val testDir = "src/test/resources"
     private val testSrcFile = File(testDir, "/bad-book-on-certain-replacement.epub")
+
     // This string is a relatively short version that demonstrates the problem.
     // Note that tiny changes stops this string from failing, such as removing preprocessNode() or adding/removing Separator/leading word.
     private val badReplacementString =
@@ -67,11 +69,13 @@ internal class EPubTranslatorServiceImplTest {
         verifyNothingTranslated()
     }
 
+    @Disabled("Disabled because the document-parser no longer fails when executed with gradle but still fails when executed within IntelliJ.")
     @Test
     fun parseEpubFailing_withPrefix() {
         executeTest_ParseEpubFailing_withConfig(epubGenerationConfigWithPrefix)
     }
 
+    @Disabled("see other comment")
     @Test
     fun parseEpubFailing_noPrefix() {
         executeTest_ParseEpubFailing_withConfig(epubGenerationConfigNoPrefix)
