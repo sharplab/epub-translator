@@ -2,6 +2,13 @@ buildscript {
     ext.quarkusVersion= '2.15.1.Final'
     ext.kotlinVersion= '1.6.21'
     ext.deeplJavaVersion = '1.0.1'
+
+    println("JAVA=${JavaVersion.current()}")
+    // https://docs.gradle.org/current/javadoc/org/gradle/api/JavaVersion.html
+    // Use .isJava11Compatible() if future java's are also acceptable, and .isJava11() for only Java11
+    if (!JavaVersion.current().isJava11Compatible()) {
+        throw new AssertionError("Current Java is '${JavaVersion.current()}' but expected Java 11")
+    }
 }
 
 plugins {
@@ -33,6 +40,12 @@ dependencies {
     implementation "com.deepl.api:deepl-java:$deeplJavaVersion"
 
     testImplementation 'io.quarkus:quarkus-junit5'
+    // https://mockk.io/
+    // https://mvnrepository.com/artifact/io.mockk/mockk
+    testImplementation("io.mockk:mockk:1.13.4")
+    // https://github.com/quarkiverse/quarkus-mockk
+    // https://mvnrepository.com/artifact/io.quarkiverse.mockk/quarkus-junit5-mockk
+    testImplementation 'io.quarkiverse.mockk:quarkus-junit5-mockk:1.1.1'
 }
 
 group 'net.sharplab.epubtranslator'

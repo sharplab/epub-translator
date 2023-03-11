@@ -35,3 +35,8 @@ build/
 
 # Project specific
 config/application.yml
+
+
+hpmor
+config/*.yml
+run.ps1

@@ -5,3 +5,6 @@ ePubTranslator:
   language:
     source: en        # default source language
     destination: ja   # default destination language
+  output:
+    applyPrefix: false     # Defaults to false
+    translatedPrefix: "> " # Prefix is applied to translated strings if applyPrefix=true

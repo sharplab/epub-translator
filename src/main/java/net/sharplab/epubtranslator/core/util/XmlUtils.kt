@@ -1,8 +1,8 @@
 package net.sharplab.epubtranslator.core.util
 
 import net.sharplab.epubtranslator.core.service.EPubTranslatorException
-import org.w3c.dom.Document
-import org.w3c.dom.DocumentFragment
+import org.slf4j.LoggerFactory
+import org.w3c.dom.*
 import org.xml.sax.InputSource
 import org.xml.sax.SAXException
 import java.io.StringReader
@@ -14,6 +14,7 @@ import javax.xml.parsers.ParserConfigurationException
  * Utility for Xml handling
  */
 object XmlUtils {
+    private val logger = LoggerFactory.getLogger(XmlUtils::class.java)
 
     private fun createDocumentBuilder(): DocumentBuilder {
         val builder: DocumentBuilder
@@ -28,14 +29,44 @@ object XmlUtils {
         return builder
     }
 
-    @JvmStatic
-    fun parseXmlStringToDocument(xmlString: String): Document {
+    fun parseXmlStringToDocument(xmlString: String): Document =
+        parseXmlStringToDocumentWithoutCheckDoc(xmlString)
+            .also { checkDoc(it) } // This removes null-nodes in translated output, even though it doesn't detect any. Very strange
+
+    fun parseXmlStringToDocumentWithoutCheckDoc(xmlString: String): Document {
         val inputSource = InputSource(StringReader(xmlString))
         return try {
             val builder = createDocumentBuilder()
             builder.parse(inputSource)
         } catch (e: SAXException) {
             throw EPubTranslatorException(e)
+        }
+    }
+
+    // Use checkDoc to avoid or detect this NullPointer issue
+    // - java.lang.NullPointerException
+    //        at java.xml/com.sun.org.apache.xml.internal.serializer.dom3.DOM3TreeWalker.dispatachChars(DOM3TreeWalker.java:373)
+    //        at java.xml/com.sun.org.apache.xml.internal.serializer.dom3.DOM3TreeWalker.serializeText(DOM3TreeWalker.java:1030)
+    //        at java.xml/com.sun.org.apache.xml.internal.serializer.dom3.DOM3TreeWalker.startNode(DOM3TreeWalker.java:418)
+    //        at java.xml/com.sun.org.apache.xml.internal.serializer.dom3.DOM3TreeWalker.traverse(DOM3TreeWalker.java:263)
+    //        at java.xml/com.sun.org.apache.xml.internal.serializer.dom3.DOM3SerializerImpl.serializeDOM3(DOM3SerializerImpl.java:106)
+    //        at java.xml/com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl.writeToString(LSSerializerImpl.java:1107)
+    // Thanks to: https://stackoverflow.com/a/17009571/197141
+    @Suppress("MemberVisibilityCanBePrivate")
+    fun checkDoc(n: Node) {
+        logger.trace("node: {}", n)
+        if (n is Text) {
+            if (n.data == null) {
+                // If this happens we could probably set n.data =""
+                logger.warn("Null data found in XML node. If a NullPointerException is thrown, please report this on the issue tracker")
+            }
+            if (doLog) logger.info("{} Text: '{}'", n.data?.length ?: -1, n.data)
+        } else {
+            logger.trace("node: {}, childnodes: {}", n.javaClass.simpleName, n.childNodes)
+        }
+        val l: NodeList = n.childNodes
+        for (i in 0 until l.length) {
+            checkDoc(l.item(i))
         }
     }
 
@@ -62,4 +93,6 @@ object XmlUtils {
             throw EPubTranslatorException(e)
         }
     }
+
+    private const val doLog = false
 }
