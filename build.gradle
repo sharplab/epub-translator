@@ -1,7 +1,7 @@
 buildscript {
     ext.quarkusVersion= '2.15.1.Final'
     ext.kotlinVersion= '1.6.21'
-    ext.deeplJavaVersion = '1.1.0'
+    ext.deeplJavaVersion = '1.2.0'
 
     println("JAVA=${JavaVersion.current()}")
     // https://docs.gradle.org/current/javadoc/org/gradle/api/JavaVersion.html
