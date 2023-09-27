@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  translator:
+    build:
+      context: .
+    volumes:
+      - ./config:/app/config/
+      - ./epub:/app/epub/
