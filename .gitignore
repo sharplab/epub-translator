@@ -35,5 +35,5 @@ build/
 
 # Project specific
 config/application.yml
-epub/
+epub/*
 sample/
