@@ -11,6 +11,16 @@ run: build
 build:
 	docker compose build
 
+.PHONY: check
+check: pull-submodule
+	for file in $(EPUB_FILES) ; do \
+		docker compose run --rm checker $$(basename $$file) ; \
+	done
+
+.PHONY: pull-submodule
+pull-submodule:
+	 git submodule update --init --recursive
+
 # .PHONY: clean 
 # 	docker compose down
 # 	docker con
