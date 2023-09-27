@@ -36,3 +36,4 @@ build/
 # Project specific
 config/application.yml
 epub/
+sample/

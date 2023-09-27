@@ -17,4 +17,4 @@ COPY --from=builder --chown=user:user /app/build/epub-translator-runner.jar /app
 
 USER user
 
-ENTRYPOINT [ "java", "-jar", "/app/epub-translator-runner.jar" ]
+ENTRYPOINT [ "java", "-jar", "/app/epub-translator-runner.jar"]

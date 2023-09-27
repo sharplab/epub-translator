@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets
 import java.util.function.Consumer
 import java.util.function.Predicate
 import javax.enterprise.context.Dependent
+import java.io.StringWriter
+
 
 @Dependent
 class EPubTranslatorServiceImpl(private val translator: Translator, private val translationMemoryService: TranslationMemoryService) : EPubTranslatorService {
@@ -40,11 +42,18 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
         val document = parseXmlStringToDocument(xhtmlString)
         val translatedDocument = translateEPubXhtmlDocument(document, srcLang, dstLang)
         val domImplementation = translatedDocument.implementation as DOMImplementationLS
+
+        val lsOutput = domImplementation.createLSOutput()
+        lsOutput.encoding = "UTF-8"
+        val stringWriter = StringWriter()
+        lsOutput.characterStream = stringWriter
+
         val lsSerializer = domImplementation.createLSSerializer()
         lsSerializer.domConfig.setParameter("xml-declaration", true)
         lsSerializer.domConfig.setParameter("element-content-whitespace", true)
         lsSerializer.domConfig.setParameter("canonical-form", false)
-        return lsSerializer.writeToString(translatedDocument)
+        lsSerializer.write(translatedDocument, lsOutput)
+        return stringWriter.toString();
     }
 
     private fun translateEPubXhtmlDocument(document: Document, srcLang: String, dstLang: String): Document {
