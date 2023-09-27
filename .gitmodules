@@ -1,0 +1,3 @@
+[submodule "epubcheck"]
+	path = epubcheck
+	url = https://github.com/w3c/epubcheck.git
