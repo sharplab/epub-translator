@@ -1,0 +1,9 @@
+Validating using EPUB version 2.0.1 rules.
+No errors or warnings detected.
+Messages: 0 fatals / 0 errors / 0 warnings / 0 infos
+
+EPUBCheck completed
+Validating using EPUB version 2.0.1 rules.
+Messages: 0 fatals / 110 errors / 0 warnings / 0 infos
+
+EPUBCheck completed

@@ -15,6 +15,7 @@ import java.util.function.Consumer
 import java.util.function.Predicate
 import javax.enterprise.context.Dependent
 import java.io.StringWriter
+import org.w3c.dom.Element
 
 
 @Dependent
@@ -196,6 +197,21 @@ class EPubTranslatorServiceImpl(private val translator: Translator, private val 
                 replaceWithTranslatedString(translationRequest, translatedString)
             }
         })
+    }
+
+    private fun modifyIds(element: Element) {
+        if (element.hasAttribute("id")) {
+            val originalId = element.getAttribute("id")
+            val modifiedId = "${originalId}_translated"
+            element.setAttribute("id", modifiedId)
+        }
+        val children = element.childNodes
+        for (i in 0 until children.length) {
+            val child = children.item(i)
+            if (child is Element) {
+                modifyIds(child)
+            }
+        }
     }
 
     private fun replaceWithTranslatedString(translationRequest: TranslationRequest, translatedString: String){

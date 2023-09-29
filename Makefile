@@ -2,8 +2,9 @@ EPUB_DIR := ./epub
 EPUB_FILES := $(wildcard $(EPUB_DIR)/*)
 
 .PHONY: run
-run: build
+run:
 	for file in $(EPUB_FILES) ; do \
+		[ "$$(basename $$file)" != "$$(basename -- $$file)" ] && continue ; \
 		docker compose run --rm translator --src /app/epub/$$(basename $$file) ; \
 	done
 
@@ -14,7 +15,8 @@ build:
 .PHONY: check
 check: pull-submodule
 	for file in $(EPUB_FILES) ; do \
-		docker compose run --rm checker $$(basename $$file) ; \
+		[ "$$(basename $$file)" != "$$(basename -- $$file)" ] && continue ; \
+		docker compose run --rm checker $$(basename $$file); \
 	done
 
 .PHONY: pull-submodule
