@@ -8,8 +8,8 @@ import net.sharplab.epubtranslator.core.driver.translator.Translator
 import net.sharplab.epubtranslator.core.provider.epub.DefaultEPubContentFileProvider
 import net.sharplab.epubtranslator.core.provider.epub.EPubChapterProvider
 import java.util.*
-import javax.enterprise.context.Dependent
-import javax.enterprise.inject.Produces
+import jakarta.enterprise.context.Dependent
+import jakarta.enterprise.inject.Produces
 
 @Dependent
 class AppConfig(private val ePubTranslatorSetting: EPubTranslatorSetting) {

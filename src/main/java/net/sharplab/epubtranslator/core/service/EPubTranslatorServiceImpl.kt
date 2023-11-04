@@ -13,7 +13,7 @@ import org.w3c.dom.ls.DOMImplementationLS
 import java.nio.charset.StandardCharsets
 import java.util.function.Consumer
 import java.util.function.Predicate
-import javax.enterprise.context.Dependent
+import jakarta.enterprise.context.Dependent
 
 @Dependent
 class EPubTranslatorServiceImpl(private val translator: Translator, private val translationMemoryService: TranslationMemoryService) : EPubTranslatorService {

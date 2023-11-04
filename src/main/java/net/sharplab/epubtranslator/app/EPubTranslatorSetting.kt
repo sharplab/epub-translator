@@ -1,7 +1,7 @@
 package net.sharplab.epubtranslator.app
 
 import org.eclipse.microprofile.config.inject.ConfigProperty
-import javax.enterprise.context.Dependent
+import jakarta.enterprise.context.Dependent
 
 @Dependent
 class EPubTranslatorSetting {
