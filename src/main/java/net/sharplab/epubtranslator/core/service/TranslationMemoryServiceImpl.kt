@@ -2,8 +2,8 @@ package net.sharplab.epubtranslator.core.service
 
 import net.sharplab.epubtranslator.core.entity.TranslationMemoryEntity
 import net.sharplab.epubtranslator.core.repository.TranslationMemoryRepository
-import javax.enterprise.context.ApplicationScoped
-import javax.transaction.Transactional
+import jakarta.enterprise.context.ApplicationScoped
+import jakarta.transaction.Transactional
 
 @ApplicationScoped
 class TranslationMemoryServiceImpl(private val translationMemoryRepository: TranslationMemoryRepository) : TranslationMemoryService {

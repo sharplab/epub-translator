@@ -3,7 +3,7 @@ package net.sharplab.epubtranslator.core.repository
 import io.quarkus.test.junit.QuarkusTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
-import javax.inject.Inject
+import jakarta.inject.Inject
 
 @QuarkusTest
 internal class TranslationMemoryRepositoryTest {

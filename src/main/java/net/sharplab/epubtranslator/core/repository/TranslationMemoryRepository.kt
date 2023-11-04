@@ -2,7 +2,7 @@ package net.sharplab.epubtranslator.core.repository
 
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheRepository
 import net.sharplab.epubtranslator.core.entity.TranslationMemoryEntity
-import javax.enterprise.context.ApplicationScoped
+import jakarta.enterprise.context.ApplicationScoped
 
 
 @ApplicationScoped
