@@ -1,0 +1,14 @@
+[versions]
+deeplJava = "1.1.0"
+quarkus = "2.15.1.Final"
+kotlin = "1.6.21"
+
+[libraries]
+deepl-api = { group = "com.deepl.api", name = "deepl-java", version.ref = "deeplJava"}
+quarkus = { group = "io.quarkus", name = "quarkus-universe-bom", version.ref = "quarkus" }
+kotlin-stdlib-jdk8 = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8", version.ref = "kotlin" }
+
+[plugins]
+quarkus = { id = "io.quarkus", version.ref = "quarkus" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-plugin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }

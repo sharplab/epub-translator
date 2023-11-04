@@ -1,8 +1,4 @@
 buildscript {
-    ext.quarkusVersion= '2.15.1.Final'
-    ext.kotlinVersion= '1.6.21'
-    ext.deeplJavaVersion = '1.1.0'
-
     println("JAVA=${JavaVersion.current()}")
     // https://docs.gradle.org/current/javadoc/org/gradle/api/JavaVersion.html
     // Use .isJava11Compatible() if future java's are also acceptable, and .isJava11() for only Java11
@@ -13,9 +9,9 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version "${kotlinVersion}"
-    id "org.jetbrains.kotlin.plugin.allopen" version "${kotlinVersion}"
-    id 'io.quarkus' version "${quarkusVersion}"
+    alias libs.plugins.kotlin.jvm
+    alias libs.plugins.kotlin.plugin.allopen
+    alias libs.plugins.quarkus
 }
 
 repositories {
@@ -27,8 +23,8 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}"
-    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusVersion}")
+    implementation libs.kotlin.stdlib.jdk8
+    implementation(enforcedPlatform(libs.quarkus))
     implementation 'io.quarkus:quarkus-kotlin'
     implementation 'io.quarkus:quarkus-arc'
     implementation 'io.quarkus:quarkus-config-yaml'
@@ -37,7 +33,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-hibernate-orm-panache-kotlin'
     implementation 'io.quarkus:quarkus-rest-client-jackson'
 
-    implementation "com.deepl.api:deepl-java:$deeplJavaVersion"
+    implementation libs.deepl.api
 
     testImplementation 'io.quarkus:quarkus-junit5'
 }
