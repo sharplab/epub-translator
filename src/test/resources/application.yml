@@ -1,0 +1,4 @@
+ePubTranslator:
+  deepL:
+    apiEndpoint: "http://dummy.example.com"
+    apiKey: "dummy"
