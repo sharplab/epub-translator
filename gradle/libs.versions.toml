@@ -1,5 +1,5 @@
 [versions]
-deeplJava = "1.6.0"
+deeplJava = "1.7.0"
 quarkus = "3.16.3"
 kotlin = "2.0.21"
 
