@@ -1,7 +1,7 @@
 [versions]
 deeplJava = "1.9.0"
 quarkus = "3.19.4"
-kotlin = "2.1.10"
+kotlin = "2.1.20"
 
 [libraries]
 deepl-api = { group = "com.deepl.api", name = "deepl-java", version.ref = "deeplJava"}
