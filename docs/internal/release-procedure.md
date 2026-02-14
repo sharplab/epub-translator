@@ -2,104 +2,37 @@
 
 This document describes epub-translator release procedure.
 
-### Prepare a release commit
+### Release execution
 
-##### Create a release branch
+The release is performed using GitHub Actions.
 
-```
-git checkout -b release-<version>
-```
+1.  Navigate to the **Actions** tab in the GitHub repository.
+2.  Select the **Release** workflow from the sidebar.
+3.  Click the **Run workflow** dropdown and select the branch (usually `master`).
+4.  Click the **Run workflow** button.
 
-##### Update version variables in build.gradle
+This workflow will:
+- Update the version in `gradle.properties` (remove `-SNAPSHOT` and add `.RELEASE`).
+- Build the uber-jar.
+- Commit and push the release change.
+- Create and push a Git tag (e.g., `0.7.0.RELEASE`).
+- Create a GitHub Release and upload the `epub-translator-runner.jar`.
 
-gradle.properties
-```
-ePubTranslatorVersion=<version>.RELEASE
-latestReleasedEPubTranslatorVersion=<version>.RELEASE
-```
+### Post-release (Automatic)
 
-##### Create a release commit
+After the **Release** workflow completes successfully, the **Bump version** workflow will automatically start.
 
-```
-git commit -a -m "Release <version>.RELEASE"
-```
+This workflow will:
+- Increment the patch version in `gradle.properties`.
+- Switch back to `SNAPSHOT` mode.
+- Commit and push the change to the repository.
 
-##### Push the release branch
+You can also trigger the **Bump version** workflow manually if needed.
 
-```
-git push origin release-<version>
-```
+### Manual update of release notes
 
-##### Create a pull request
+Although the release is created automatically with generated notes, you may want to refine them:
 
-create a pull request with following title: `Release <version>.RELEASE`
-
-##### Check the build status & Merge the pull request
-
-Check the build status & merge the pull request.
-
-### Prepare a release tag
-
-##### Prepare a release note
-
-generate a release note draft
-
-```
-./gradlew generateReleaseNote
-```
-
-update the release note draft (`build/release-note.md`) properly with your editor.
-
-##### Create a release tag
-
-```
-git tag <version>.RELEASE
-```
-
-### Ship the release
-
-##### Push the release tag
-
-```
-git push origin <version>.RELEASE
-```
-
-##### Update the release note on GitHub
-
-Update the release note on GitHub
-
-### Declare new version development start
-
-##### Create a branch
-
-```
-git checkout -b <new version>-development
-```
-
-##### Update version variables in build.gradle
-
-gradle.properties
-```
-ePubTranslatorVersion=<new version>-SNAPSHOT
-latestReleasedEPubTranslatorVersion=<version>.RELEASE
-```
-
-##### Commit the change
-
- ```
-git commit -a -m "Start <new version> development"
- ```
- 
-##### Push the release branch
-
-```
-git push origin <new version>-development
-```
-
-##### Check the build status
-
-Check the build status before continue.
-
-##### Merge the pull request
-
-merge the pull request and delete the branch.
+1.  Go to the **Releases** page on GitHub.
+2.  Edit the newly created release.
+3.  Adjust the release notes as necessary and save.

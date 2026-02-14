@@ -5,4 +5,4 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-rootProject.name='epub-translator'
+rootProject.name = "epub-translator"

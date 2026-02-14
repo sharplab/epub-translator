@@ -1,0 +1,50 @@
+name: Bump version
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [release]
+    types: [completed]
+
+env:
+  JAVA_VERSION: 17
+
+jobs:
+  bump-version:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'gradle'
+
+      - name: Bump patch version
+        run: |
+          ./gradlew bumpPatchVersion
+
+      - name: Switch to snapshot
+        run: |
+          ./gradlew switchToSnapshot
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Bump patch version"
+
+      - name: Push commit
+        run: |
+          git fetch
+          git rebase origin/master
+          git push
