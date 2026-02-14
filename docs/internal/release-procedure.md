@@ -13,10 +13,10 @@ The release is performed using GitHub Actions.
 
 This workflow will:
 - Update the version in `gradle.properties` (remove `-SNAPSHOT` and add `.RELEASE`).
-- Build the uber-jar.
+- Build the uber-jar (and run tests).
 - Commit and push the release change.
 - Create and push a Git tag (e.g., `0.7.0.RELEASE`).
-- Create a GitHub Release and upload the `epub-translator-runner.jar`.
+- Create a GitHub Release and upload the `epub-translator.jar`.
 
 ### Post-release (Automatic)
 
