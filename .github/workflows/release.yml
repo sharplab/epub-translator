@@ -1,58 +1,76 @@
-on:
-  push:
-    tags:
-      - '*.RELEASE'
+name: Release
 
-name: Create Release
+on:
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: 17
 
 jobs:
   release:
-    name: Release
+    permissions:
+      contents: write
+
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 17
+          java-version: ${{ env.JAVA_VERSION }}
           cache: 'gradle'
 
-      - name: Build uber-jar with Gradle
-        run: ./gradlew quarkusBuild -Dquarkus.package.type=uber-jar
+      - name: Switch to release
+        run: |
+          ./gradlew switchToRelease
 
-#      - name: Build native image
-#        run: ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true
+      - name: Update versions in documents
+        run: |
+          ./gradlew updateVersionsInDocuments
+
+      - name: Build uber-jar with Gradle
+        run: |
+          ./gradlew quarkusBuild -Dquarkus.package.type=uber-jar
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          VERSION=$(grep "ePubTranslatorVersion" gradle.properties | cut -d'=' -f2)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit --allow-empty -m "Release ${VERSION}"
+
+      - name: Push commit
+        shell: bash
+        run: |
+          git fetch
+          git rebase origin/master
+          git push
+
+      - name: Tag commit
+        id: tag_commit
+        shell: bash
+        run: |
+          VERSION=$(grep "ePubTranslatorVersion" gradle.properties | cut -d'=' -f2)
+          TAG_NAME="${VERSION}.RELEASE"
+          git tag "$TAG_NAME"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Push tag
+        shell: bash
+        run: |
+          git push origin "${{ steps.tag_commit.outputs.tag_name }}"
 
       - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: true
-          prerelease: false
-
-      - name: Upload release uber-jar asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/epub-translator-runner.jar
-          asset_name: epub-translator-runner.jar
-          asset_content_type: application/java-archive
-
-#      - name: Upload release executable asset
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ./build/epub-translator-runner
-#          asset_name: epub-translator-runner
-#          asset_content_type: application/octet-stream
+        run: |
+          gh release create "${{ steps.tag_commit.outputs.tag_name }}" \
+            build/epub-translator-runner.jar \
+            --title "Release ${{ steps.tag_commit.outputs.tag_name }}" \
+            --generate-notes
