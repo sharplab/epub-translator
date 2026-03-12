@@ -1,6 +1,6 @@
 [versions]
 deeplJava = "1.14.0"
-quarkus = "3.32.2"
+quarkus = "3.32.3"
 kotlin = "2.3.10"
 
 [libraries]
